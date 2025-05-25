@@ -1,0 +1,196 @@
+{
+  "main": {
+    "id": "8bdebb6558f12366",
+    "type": "split",
+    "children": [
+      {
+        "id": "943d5e2336be5dd3",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "e7130433b0e816f7",
+            "type": "leaf",
+            "state": {
+              "type": "3d_graph_view",
+              "state": {},
+              "icon": "lucide-file",
+              "title": "3D-Graph"
+            }
+          },
+          {
+            "id": "fd9553b3cfe0f370",
+            "type": "leaf",
+            "state": {
+              "type": "canvas",
+              "state": {
+                "file": "obsidian/程序执行流程.canvas",
+                "viewState": {
+                  "x": 559.1876732542307,
+                  "y": 101.45851006050466,
+                  "zoom": -0.26263091120359067
+                }
+              },
+              "icon": "lucide-layout-dashboard",
+              "title": "程序执行流程"
+            }
+          }
+        ],
+        "currentTab": 1
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "27efc14292bf49f6",
+    "type": "split",
+    "children": [
+      {
+        "id": "828bc1ac4ed0d9d9",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "c405bd9f825f9fa6",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "文件列表"
+            }
+          },
+          {
+            "id": "db5d60b9a6cb477a",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "搜索"
+            }
+          },
+          {
+            "id": "f9dd85c9189d0a99",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "书签"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "e8c234f0bb70ef7c",
+    "type": "split",
+    "children": [
+      {
+        "id": "f697e7cc7cb3306d",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "c6af625963e6ac8d",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "反向链接"
+            }
+          },
+          {
+            "id": "8fa8011c20aa4c07",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "出链"
+            }
+          },
+          {
+            "id": "da61332010be4b22",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "标签"
+            }
+          },
+          {
+            "id": "59fca900e0319f55",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "大纲"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:打开快速切换": false,
+      "graph:查看关系图谱": false,
+      "canvas:新建白板": false,
+      "daily-notes:打开/创建今天的日记": false,
+      "templates:插入模板": false,
+      "command-palette:打开命令面板": false,
+      "obsidian-excalidraw-plugin:新建绘图文件": false,
+      "excel:创建 Excel 文件": false,
+      "3d-graph:3D Graph": false,
+      "workspaces:管理工作区布局": false,
+      "audio-recorder:开始/结束录音": false,
+      "random-note:开始漫游笔记": false,
+      "zk-prefixer:创建时间戳笔记": false,
+      "markdown-importer:打开 Markdown 格式转换器": false
+    }
+  },
+  "active": "fd9553b3cfe0f370",
+  "lastOpenFiles": [
+    "obsidian/程序执行流程.canvas",
+    "obsidian",
+    "docs/agent.md"
+  ]
+}

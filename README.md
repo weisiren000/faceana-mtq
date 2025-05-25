@@ -7,4 +7,4 @@
 
 ### Package manage tools 
 1. uv: used to replace pip
-2. bun: used to replace npm
+~~2. bun: used to replace npm~~

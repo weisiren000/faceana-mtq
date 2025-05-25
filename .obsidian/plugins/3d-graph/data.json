@@ -1,0 +1,15 @@
+{
+  "filters": {
+    "doShowOrphans": true,
+    "doShowAttachments": false
+  },
+  "groups": {
+    "groups": []
+  },
+  "display": {
+    "nodeSize": 7,
+    "linkThickness": 5,
+    "particleSize": 11,
+    "particleCount": 5
+  }
+}
