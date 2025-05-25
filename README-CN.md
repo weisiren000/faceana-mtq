@@ -1,10 +1,10 @@
-# An emotion analysis system
+# 情感分析系统
 
-### Stack
+### 技术栈
 
-1. backend: python
-2. frontend: python...
+1. 后端: python
+2. 前端: python...
 
-### Package manage tools 
-1. uv: used to replace pip
-2. bun: used to replace npm
+### 包管理工具
+1. uv: 用于替代 pip
+2. bun: 用于替代 npm
