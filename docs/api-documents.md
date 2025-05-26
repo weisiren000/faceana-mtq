@@ -10,22 +10,26 @@ FACEPP_API_SECRET=Q82rf7NWaheJEQ6Az5_aJoN1MlpfDipT
 
 # OpenRouter API密钥
 OPENROUTER_API_KEY=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
-MODEL = {qwen/qwen3-235b-a22b:free，
+MODEL = {
+        qwen/qwen3-235b-a22b:free，
         google/gemma-3-27b-it:free，
         microsoft/phi-4-reasoning-plus:free，
         moonshotai/kimi-vl-a3b-thinking:free，
-        qwen/qwen2.5-vl-32b-instruct:free}
+        qwen/qwen2.5-vl-32b-instruct:free
+        }
 
 # Gemini API密钥
 GEMINI_API_KEY=AIzaSyDliXeDpoK1vTj-4wWPHkSP5Akaf-wMYPs
-MODEL = {gemini-2.0-flash-lite，
+MODEL = {
+        gemini-2.0-flash-lite，
         gemini-2.0-flash-lite-001，
         gemini-2.0-flash，
         gemini-2.0-flash-001，
         gemini-2.0-flash-exp，
         gemini-2.5-flash-preview-05-20，
         gemma-3-27b-it，
-        gemma-3n-e4b-it}
+        gemma-3n-e4b-it
+        }
 
 # OpenAI API密钥
 OPENAI_API_KEY=NONE
