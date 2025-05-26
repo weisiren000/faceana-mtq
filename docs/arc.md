@@ -1,161 +1,237 @@
-# 项目架构
+# FaceAna-MTQ 项目架构文档
 
 ## 项目概述
 
-这是一个情感分析系统（Emotion Analysis System），主要用于分析人脸图像和相关数据中的情感表达。系统采用Python作为主要开发语言，前端使用Python Flet框架。
+**项目名称**: FaceAna-MTQ (Face Analysis - Multi-Technology Queue)
+**项目类型**: 基于多AI技术栈的情感分析系统
+**核心功能**: 通过摄像头实时捕获人脸图像，利用多种AI API进行情感分析，并支持与外部创意工具集成
 
 ## 技术栈
 
-1. 后端: Python
-2. 前端: Python Flet
-3. 包管理工具: 
-   - uv: 用于替代pip管理Python依赖
-   - ~~bun: 用于替代npm~~（已弃用）
+### 后端技术
+- **主语言**: Python
+- **包管理**: uv (替代pip)
+- **架构模式**: 模块化微服务架构
 
-## 目录结构
+### 前端技术
+- **框架**: Python Flet
+- **交互方式**: 桌面应用程序
+
+### AI服务集成
+- **Face++**: 人脸检测与分析
+- **OpenAI**: GPT系列模型
+- **Anthropic**: Claude系列模型
+- **Google Gemini**: 多模态AI模型
+- **OpenRouter**: AI模型路由服务
+
+## 项目目录结构
 
 ```
 faceana-mtq/
-│
-├── .obsidian/                    # Obsidian配置和插件目录
-│   └── plugins/                  # Obsidian插件
-│       ├── 3d-graph/             # 3D图表插件
-│       ├── advanced-canvas/      # 高级画布插件
-│       ├── excel/                # Excel插件
-│       ├── obsidian-chartsview-plugin/  # 图表视图插件
-│       ├── obsidian-excalidraw-plugin/  # Excalidraw绘图插件
-│       ├── obsidian-image-toolkit/      # 图像工具包插件
-│       ├── obsidian-latex-suite/        # LaTeX套件插件
-│       ├── obsidian-mind-map/           # 思维导图插件
-│       └── obsidian-tasks-plugin/       # 任务管理插件
-│
-├── docs/                         # 项目文档
-│   ├── arc.md                    # 项目架构文档
-│   ├── api-documents.md          # API文档
-│   ├── idea.md                   # 项目想法
-│   ├── agent.md                  # 智能体文档
-├── obsidian/                     # Obsidian笔记和知识库
-│
-├── src/                          # 源代码目录
-│   ├── config.py                 # 全局配置文件
-│   ├── main.py                   # 主控程序，用于启动前后端
-│   │
-│   ├── _backend/                 # 后端代码
-│   │   ├── agent/                # 智能体模块
-│   │   │   ├── __init__.py       # 智能体初始化
-│   │   │   ├── dsa.py            # 数据情感分析智能体
-│   │   │   ├── jsa.py            # 视觉情感分析智能体
-│   │   │   ├── pea.py            # 心理情感分析智能体
-│   │   │   └── vsa.py            # 视觉情感分析智能体
-│   │   │
-│   │   ├── api/                  # API接口
-│   │   │   ├── __init__.py       # API初始化
-│   │   │   ├── anthropic.py      # Anthropic API集成
-│   │   │   ├── facepp.py         # Face++ API集成
-│   │   │   ├── gemini.py         # Gemini API集成
-│   │   │   ├── openai.py         # OpenAI API集成
-│   │   │   └── openrouter.py     # OpenRouter API集成
-│   │   │
-│   │   ├── app/                  # 应用层
-│   │   │   ├── main.py           # 应用主入口
-│   │   │   └── assets/           # 资源文件
-│   │   │       ├── fonts/        # 字体资源
-│   │   │       ├── images/       # 图像资源
-│   │   │       ├── utils/        # 工具函数
-│   │   │       └── views/        # 视图组件
-│   │   │
-│   │   ├── core/                 # 核心功能模块
-│   │   │   ├── __init__.py       # 核心模块初始化
-│   │   │   ├── capture.py        # 截图器：检测人脸并截取摄像头图像
-│   │   │   ├── cleaner.py        # 清理器：清理摄像机截取的图像避免堆积
-│   │   │   ├── splicer.py        # 拼接器：拼接摄像头捕捉到的图像
-│   │   │   └── tagger.py         # 标注器：标注图像中人物的五官点
-│   │   │
-│   │   ├── utils/                # 工具函数
-│   │   ├── config.py             # 后端配置
-│   │   └── main.py               # 后端主入口
-│   │
-│   ├── arduino_link/             # Arduino连接模块
-│   │   └── __init__.py           # Arduino连接初始化
-│   │
-│   ├── comfyui_link/             # ComfyUI连接模块
-│   │   └── __init__.py           # ComfyUI连接初始化
-│   │
-│   └── touchdesigner_link/       # TouchDesigner连接模块
-│       └── __init__.py           # TouchDesigner连接初始化
-│
-├── .env                          # 环境变量
-├── .env.example                  # 环境变量示例
-├── .gitignore                    # Git忽略文件
-├── README-CN.md                  # 中文说明文档
-├── README.md                     # 英文说明文档
-└── requirements.txt              # Python依赖包列表
+├── docs/                           # 项目文档
+│   ├── api/                        # API文档
+│   │   ├── anthropic/              # Anthropic API相关
+│   │   ├── facepp/                 # Face++ API相关
+│   │   ├── gemini/                 # Gemini API相关
+│   │   └── openai/                 # OpenAI API相关
+│   ├── vision-api/                 # 视觉API技术文档
+│   │   ├── anthropic-vision-api.md
+│   │   ├── face-detection-tech.md
+│   │   ├── gemini-vision-api.md
+│   │   └── openai-vision-api.md
+│   ├── agent.md                    # 智能体文档
+│   ├── api-documents.md            # API密钥配置
+│   ├── arc.md                      # 项目架构文档(本文件)
+│   ├── idea.md                     # 项目创意文档
+│   └── init.md                     # 初始化文档
+├── obsidian/                       # Obsidian笔记
+│   └── 程序执行流程.canvas         # 程序流程图
+├── rules/                          # 项目规则
+│   └── first_principles.md         # 第一性原理思考框架
+├── src/                            # 源代码目录
+│   ├── _backend/                   # 后端核心模块
+│   │   ├── api/                    # API集成模块
+│   │   │   ├── anthropic.py        # Anthropic API封装
+│   │   │   ├── facepp.py          # Face++ API封装
+│   │   │   ├── gemini.py          # Gemini API封装
+│   │   │   ├── openai.py          # OpenAI API封装
+│   │   │   └── openrouter.py      # OpenRouter API封装
+│   │   ├── app/                    # 前端应用
+│   │   │   ├── assets/            # 静态资源
+│   │   │   │   ├── fonts/         # 字体文件
+│   │   │   │   ├── images/        # 图片资源
+│   │   │   │   ├── utils/         # 工具组件
+│   │   │   │   └── views/         # 视图组件
+│   │   │   └── main.py            # 前端主程序
+│   │   ├── core/                   # 核心功能模块
+│   │   │   ├── capture.py         # 图像捕获器
+│   │   │   ├── cleaner.py         # 图像清理器
+│   │   │   ├── splicer.py         # 图像拼接器
+│   │   │   └── tagger.py          # 人脸标注器
+│   │   ├── robot/                  # AI智能体模块
+│   │   │   ├── dsa.py             # 数据情感分析智能体
+│   │   │   ├── jsa.py             # 情感裁定者智能体
+
+│   │   │   └── vsa.py             # 视觉情感分析智能体
+│   │   ├── test/                   # 测试模块
+│   │   ├── utils/                  # 工具模块
+│   │   │   ├── class/             # 工具类
+│   │   │   ├── function/          # 工具函数
+│   │   │   ├── model.py           # 模型定义
+│   │   │   └── prompt.py          # 提示词模板
+│   │   ├── config.py              # 后端配置
+│   │   └── main.py                # 后端主程序
+
+│   ├── comfyui_link/              # ComfyUI集成模块
+│   ├── touchdesigner_link/        # TouchDesigner集成模块
+│   ├── config.py                  # 全局配置
+│   └── main.py                    # 项目主入口
+├── requirements.txt               # Python依赖
+├── README.md                      # 项目说明(英文)
+└── README-CN.md                   # 项目说明(中文)
 ```
 
-## 模块功能说明
+## 核心模块详解
 
-### 后端核心模块
+### 1. 图像处理流水线 (Core Pipeline)
 
-1. **截图器 (capture.py)**
-   - 功能：检测人脸并截取摄像头图像
-   - 职责：负责从摄像头获取原始图像并进行人脸检测
+#### Capture (图像捕获器)
+- **功能**: 检测到人脸时自动截取摄像头图像
+- **技术**: 实时视频流处理，人脸检测触发机制
+- **输出**: 原始人脸图像数据
 
-2. **清理器 (cleaner.py)**
-   - 功能：清理摄像机截取的图像
-   - 职责：避免图像在系统中堆积，管理存储空间
+#### Tagger (人脸标注器)
+- **功能**: 标注人脸关键点和五官位置
+- **技术**: 人脸关键点检测算法
+- **输出**: 带有标注信息的图像数据
 
-3. **拼接器 (splicer.py)**
-   - 功能：拼接摄像头捕捉到的图像
-   - 职责：将多个图像帧组合或拼接成完整序列
+#### Splicer (图像拼接器)
+- **功能**: 拼接多帧捕获的图像，形成完整分析序列
+- **技术**: 图像序列处理和时间轴管理
+- **输出**: 拼接后的图像序列
 
-4. **标注器 (tagger.py)**
-   - 功能：标注图像中人物的五官点
-   - 职责：识别并标记面部特征点，为情感分析提供基础数据
+#### Cleaner (图像清理器)
+- **功能**: 清理临时图像文件，避免存储空间堆积
+- **技术**: 文件生命周期管理，自动垃圾回收
+- **输出**: 系统资源优化
 
-### 智能体模块
+### 2. AI智能体协作系统 (Robot Collaboration)
 
-1. **数据情感分析智能体 (dsa.py)**
-   - 功能：专注于文本数据的情感分析
-   - 职责：处理和分析文本内容中的情感表达
+#### DSA (Data Sentiment Analyzer) - 数据情感分析智能体
+- **专长**: 文本数据的情感分析
+- **技术**: NLP情感分类，文本特征提取
+- **输入**: 文本描述、标签信息
+- **输出**: 文本情感评分和分类
 
-2. **视觉情感分析智能体 (jsa.py, vsa.py)**
-   - 功能：专注于图像和视觉数据的情感识别
-   - 职责：分析图像中的情感表达和视觉线索
+#### VSA (Visual Sentiment Analyzer) - 视觉情感分析智能体
+- **专长**: 图像和视觉数据的情感识别
+- **技术**: 计算机视觉，面部表情识别
+- **输入**: 人脸图像、表情特征
+- **输出**: 视觉情感评分和分类
 
-3. **心理情感分析智能体 (pea.py)**
-   - 功能：基于心理学理论进行深度情感分析
-   - 职责：结合心理学模型解读情感数据
 
-### 外部连接模块
 
-1. **Arduino连接模块**
-   - 功能：与Arduino硬件设备进行通信和数据交换
+#### JSA (Judgment Sentiment Arbiter) - 情感裁定者智能体
+- **专长**: 综合多个智能体的分析结果，做出最终判断
+- **技术**: 多源数据融合，决策算法
+- **输入**: 各智能体的分析结果
+- **输出**: 最终情感分析报告
 
-2. **ComfyUI连接模块**
-   - 功能：与ComfyUI图形界面工具集成
+### 3. API集成层 (API Integration Layer)
 
-3. **TouchDesigner连接模块**
-   - 功能：与TouchDesigner视觉编程环境集成
+#### 多AI服务支持
+- **Face++**: 专业人脸检测和分析
+- **OpenAI**: 强大的语言理解和生成
+- **Anthropic**: 安全可靠的AI助手
+- **Gemini**: 多模态AI能力
+- **OpenRouter**: 统一的AI模型访问接口
 
-### API集成
+#### API管理特性
+- 统一的API调用接口
+- 错误处理和重试机制
+- 负载均衡和故障转移
+- API密钥安全管理
 
-系统集成了多种AI服务API：
-- Anthropic
-- Face++
-- Gemini
-- OpenAI
-- OpenRouter
+### 4. 外部系统集成 (External Integration)
 
-这些API为系统提供了强大的AI能力支持，包括图像识别、自然语言处理和情感分析等功能。
 
-## 数据流
 
-1. 摄像头捕获图像 → 截图器处理 → 标注器标记特征点 → 情感分析智能体分析 → 结果展示
-2. 需要时可通过拼接器组合图像，并由清理器管理图像存储
+#### TouchDesigner Link
+- **用途**: 创意视觉效果和交互设计
+- **应用场景**: 实时视觉反馈，艺术装置控制
+- **通信方式**: OSC协议，网络通信
 
-## 扩展性
+#### ComfyUI Link
+- **用途**: AI图像生成和处理工作流
+- **应用场景**: 情感可视化，艺术创作
+- **通信方式**: API调用，工作流触发
 
-系统设计为模块化架构，可以通过以下方式扩展：
-1. 添加新的智能体模块处理不同类型的情感分析
-2. 集成更多的外部API和服务
-3. 通过Arduino、ComfyUI和TouchDesigner连接模块与外部系统和设备交互
+## 系统工作流程
+
+### 1. 数据采集阶段
+```
+摄像头监控 → 人脸检测 → 图像捕获 → 关键点标注
+```
+
+### 2. 数据处理阶段
+```
+图像预处理 → 特征提取 → 多模态分析 → 数据清理
+```
+
+### 3. AI分析阶段
+```
+DSA文本分析 ↘
+VSA视觉分析 → JSA综合裁定 → 最终结果
+```
+
+### 4. 结果输出阶段
+```
+分析报告 → 可视化展示 → 外部系统联动 → 数据存储
+```
+
+## 技术特色
+
+### 1. 多智能体协作
+- 专业化分工，各司其职
+- 协同决策，提高准确性
+- 可扩展架构，易于添加新智能体
+
+### 2. 多API集成
+- 降低单一服务依赖风险
+- 充分利用各AI服务优势
+- 成本优化和性能平衡
+
+### 3. 实时处理能力
+- 低延迟图像捕获
+- 流式数据处理
+- 实时结果反馈
+
+### 4. 创意工具集成
+- 支持艺术创作应用
+- 跨平台协作能力
+- 丰富的输出形式
+
+## 部署和配置
+
+### 环境要求
+- Python 3.8+
+- 摄像头设备
+- 网络连接(API调用)
+- 充足的计算资源
+
+### 配置步骤
+1. 安装依赖: `uv install`
+2. 配置API密钥
+3. 设置摄像头权限
+4. 启动后端服务
+5. 启动前端应用
+
+### 扩展性考虑
+- 模块化设计便于功能扩展
+- 标准化接口支持新API集成
+- 插件化架构支持自定义智能体
+- 配置化管理支持多环境部署
+
+---
+
+*本文档基于第一性原理思考框架，从项目基础架构出发，系统性地分析了FaceAna-MTQ项目的技术架构和实现方案。*

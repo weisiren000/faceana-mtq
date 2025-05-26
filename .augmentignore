@@ -1,0 +1,7 @@
+venv
+.venv
+__pycache__
+.vscode
+.obsidian
+obsidian
+*/__pycache__

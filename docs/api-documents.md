@@ -3,7 +3,7 @@ OPENROUTER_API_DOC_URL=https://openrouter.ai/docs/quickstart
 OPENAI_API_DOC_URL=https://platform.openai.com/docs/quickstart?api-mode=responses
 ANTHROPIC_API_DOC_URL=https://docs.anthropic.com/en/api/overview#python
 GEMINI_API_DOC_URL=https://ai.google.dev/gemini-api/docs/openai
-
+FIGMA_DESIGN_FILE_URL=https://www.figma.com/design/AiW4JmMq052b4VJKrG2DiY/EmoScan?node-id=0-1&t=fcYYpsEaoe6SS19z-1
 # Face++ API密钥
 FACEPP_API_KEY=wvv-yzcDhvSx-vIs7tl3DZ2vJnEp-NCr
 FACEPP_API_SECRET=Q82rf7NWaheJEQ6Az5_aJoN1MlpfDipT

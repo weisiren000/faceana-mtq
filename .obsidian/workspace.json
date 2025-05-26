@@ -14,24 +14,17 @@
               "type": "3d_graph_view",
               "state": {},
               "icon": "lucide-file",
-              "title": "3D-Graph"
+              "title": "插件不再活动"
             }
           },
           {
             "id": "fd9553b3cfe0f370",
             "type": "leaf",
             "state": {
-              "type": "canvas",
-              "state": {
-                "file": "obsidian/程序执行流程.canvas",
-                "viewState": {
-                  "x": 559.1876732542307,
-                  "y": 101.45851006050466,
-                  "zoom": -0.26263091120359067
-                }
-              },
-              "icon": "lucide-layout-dashboard",
-              "title": "程序执行流程"
+              "type": "3d_graph_view",
+              "state": {},
+              "icon": "lucide-file",
+              "title": "3D-Graph"
             }
           }
         ],
@@ -189,8 +182,23 @@
   },
   "active": "fd9553b3cfe0f370",
   "lastOpenFiles": [
+    "logs",
+    "data/temp",
+    "src/_backend/__pycache__/config.cpython-312.pyc",
+    "src/_backend/__pycache__",
+    "test_simple.py",
+    "src/_backend/robot/__pycache__/dsa.cpython-312.pyc",
+    "src/_backend/robot/__pycache__/__init__.cpython-312.pyc",
+    "src/_backend/robot/__pycache__",
+    "src/_backend/api/__pycache__/__init__.cpython-312.pyc",
+    "src/_backend/api/__pycache__/facepp.cpython-312.pyc",
+    "src/_backend/api/__pycache__",
     "obsidian/程序执行流程.canvas",
-    "obsidian",
+    "docs/app/UI界面截图.png",
+    "docs/app/image.png",
+    "rules/work_preference.md",
+    "docs/arc.md",
+    "src/_backend/core/README.md",
     "docs/agent.md"
   ]
 }
