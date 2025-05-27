@@ -36,3 +36,12 @@ OPENAI_API_KEY=NONE
 
 # Anthropic API密钥
 ANTHROPIC_API_KEY=NONE
+
+# 识别的情绪类别：
+   - 愤怒(Angry)
+   - 厌恶(Disgusted)
+   - 恐惧(Fearful)
+   - 高兴(Happy)
+   - 平静(Neutral)
+   - 悲伤(Sad)
+   - 惊讶(Surprised)

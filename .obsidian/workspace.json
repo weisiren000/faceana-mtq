@@ -4,21 +4,41 @@
     "type": "split",
     "children": [
       {
-        "id": "943d5e2336be5dd3",
+        "id": "e875b120a82e80de",
         "type": "tabs",
         "children": [
           {
-            "id": "e7130433b0e816f7",
+            "id": "d3935ed460cd0772",
             "type": "leaf",
             "state": {
               "type": "3d_graph_view",
               "state": {},
               "icon": "lucide-file",
-              "title": "插件不再活动"
+              "title": "3D-Graph"
             }
           },
           {
-            "id": "fd9553b3cfe0f370",
+            "id": "b38532214ee01d02",
+            "type": "leaf",
+            "state": {
+              "type": "3d_graph_view",
+              "state": {},
+              "icon": "lucide-file",
+              "title": "3D-Graph"
+            }
+          },
+          {
+            "id": "a4d4d4bbd4c2c507",
+            "type": "leaf",
+            "state": {
+              "type": "3d_graph_view",
+              "state": {},
+              "icon": "lucide-file",
+              "title": "3D-Graph"
+            }
+          },
+          {
+            "id": "bb7a73224188ec01",
             "type": "leaf",
             "state": {
               "type": "3d_graph_view",
@@ -28,7 +48,7 @@
             }
           }
         ],
-        "currentTab": 1
+        "currentTab": 3
       }
     ],
     "direction": "vertical"
@@ -180,23 +200,42 @@
       "markdown-importer:打开 Markdown 格式转换器": false
     }
   },
-  "active": "fd9553b3cfe0f370",
+  "active": "c405bd9f825f9fa6",
   "lastOpenFiles": [
-    "logs",
-    "data/temp",
-    "src/_backend/__pycache__/config.cpython-312.pyc",
-    "src/_backend/__pycache__",
-    "test_simple.py",
-    "src/_backend/robot/__pycache__/dsa.cpython-312.pyc",
-    "src/_backend/robot/__pycache__/__init__.cpython-312.pyc",
-    "src/_backend/robot/__pycache__",
-    "src/_backend/api/__pycache__/__init__.cpython-312.pyc",
-    "src/_backend/api/__pycache__/facepp.cpython-312.pyc",
-    "src/_backend/api/__pycache__",
-    "obsidian/程序执行流程.canvas",
-    "docs/app/UI界面截图.png",
-    "docs/app/image.png",
+    "FRONTEND_RECONSTRUCTION_README.md",
+    "start_frontend_reconstruction.py",
+    "src/_backend/api_server.py",
+    "setup_new_frontend.py",
+    "FRONTEND_RECONSTRUCTION_PLAN.md",
+    "data/splicer/final_splice_20250526_225807.jpg",
+    "data/splicer/spliced_tagger_20250526_225807.jpg",
+    "data/splicer/spliced_capture_20250526_225807.jpg",
+    "data/tagger/detection_capture_20250526_225805_976_20250526_225807.json",
+    "data/tagger/tagged_capture_20250526_225805_976_20250526_225807.jpg",
+    "data/tagger/detection_capture_20250526_225805_159_20250526_225807.json",
+    "data/tagger/tagged_capture_20250526_225805_159_20250526_225807.jpg",
+    "data/tagger/detection_capture_20250526_225804_342_20250526_225806.json",
+    "data/tagger/tagged_capture_20250526_225804_342_20250526_225806.jpg",
+    "data/tagger/detection_capture_20250526_225803_525_20250526_225806.json",
+    "data/tagger/tagged_capture_20250526_225803_525_20250526_225806.jpg",
+    "data/tagger/detection_capture_20250526_225802_626_20250526_225806.json",
+    "data/tagger/tagged_capture_20250526_225802_626_20250526_225806.jpg",
+    "data/tagger/detection_capture_20250526_222704_918_20250526_225806.json",
+    "data/tagger/tagged_capture_20250526_222704_918_20250526_225806.jpg",
+    "data/tagger/detection_capture_20250526_222704_095_20250526_225806.json",
+    "data/tagger/tagged_capture_20250526_222704_095_20250526_225806.jpg",
+    "venv/Lib/site-packages/black-25.1.0.dist-info/licenses/AUTHORS.md",
+    "PROJECT_SUMMARY_2024-12-28.md",
+    "venv/Lib/site-packages/numpy/random/LICENSE.md",
+    "README_GUI.md",
+    "plan/project_status_summary.md",
+    "plan/weekly_plan_w1.md",
+    "plan/plan2_next_phase.md",
+    "PROJECT_COMPLETION_SUMMARY.md",
     "rules/work_preference.md",
+    "plan/plan1.md",
+    "TODO.md",
+    "obsidian/程序执行流程.canvas",
     "docs/arc.md",
     "src/_backend/core/README.md",
     "docs/agent.md"

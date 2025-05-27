@@ -1,2 +1,8 @@
 # .gitignore file
 rules
+**/__pycache__
+**/venv
+**/.venv
+venv
+.venv
+.vscode

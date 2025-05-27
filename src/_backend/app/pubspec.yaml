@@ -1,0 +1,76 @@
+name: emoscan
+description: A professional emotion analysis desktop application with multi-agent AI collaboration.
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+  flutter: ">=3.10.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  
+  # UI Components
+  cupertino_icons: ^1.0.2
+  flutter_svg: ^2.0.9
+  google_fonts: ^6.1.0
+  
+  # Camera and Media
+  camera: ^0.10.5+5
+  image: ^4.1.3
+  
+  # Charts and Visualization
+  fl_chart: ^0.65.0
+  syncfusion_flutter_charts: ^23.2.7
+  
+  # HTTP and Communication
+  http: ^1.1.0
+  web_socket_channel: ^2.4.0
+  dio: ^5.3.3
+  
+  # State Management
+  provider: ^6.1.1
+  riverpod: ^2.4.9
+  flutter_riverpod: ^2.4.9
+  
+  # Utilities
+  path_provider: ^2.1.1
+  shared_preferences: ^2.2.2
+  intl: ^0.18.1
+  uuid: ^4.2.1
+  
+  # Desktop specific
+  window_manager: ^0.3.7
+  desktop_window: ^0.4.0
+  
+  # Animation
+  lottie: ^2.7.0
+  animated_text_kit: ^4.2.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+  build_runner: ^2.4.7
+
+flutter:
+  uses-material-design: true
+  
+  assets:
+    - assets/images/
+    - assets/icons/
+    - assets/animations/
+    - assets/fonts/
+  
+  fonts:
+    - family: Roboto
+      fonts:
+        - asset: assets/fonts/Roboto-Regular.ttf
+        - asset: assets/fonts/Roboto-Bold.ttf
+          weight: 700
+    - family: Inter
+      fonts:
+        - asset: assets/fonts/Inter-Regular.ttf
+        - asset: assets/fonts/Inter-Bold.ttf
+          weight: 700

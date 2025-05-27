@@ -1,0 +1,26 @@
+# 最小依赖版本 - 用于解决兼容性问题
+# 如果主requirements.txt安装失败，可以尝试这个版本
+
+# 核心GUI框架
+flet
+
+# 图像处理 (核心)
+opencv-python
+Pillow
+numpy
+
+# HTTP请求 (核心)
+requests
+
+# 配置管理 (核心)
+python-dotenv
+
+# 系统监控
+psutil
+
+# 基础工具
+tqdm
+colorama
+
+# 开发测试 (可选)
+pytest

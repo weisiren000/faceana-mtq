@@ -4,4 +4,11 @@ __pycache__
 .vscode
 .obsidian
 obsidian
-*/__pycache__
+**/__pycache__
+**/.venv
+**/venv
+node_modules
+**/node_modules
+**/flutter
+flutter
+*/flutter
