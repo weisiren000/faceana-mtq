@@ -1,3 +1,0 @@
-"""
-    ComfyUI link module
-"""

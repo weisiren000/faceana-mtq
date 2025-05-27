@@ -1,3 +1,0 @@
-""" 
-    TouchDesigner Link module
-"""

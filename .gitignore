@@ -6,3 +6,4 @@ rules
 venv
 .venv
 .vscode
+test_app
