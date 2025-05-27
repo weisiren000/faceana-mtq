@@ -1,40 +1,55 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&family=Source+Code+Pro&display=swap');
+
 html, body {
-  height: 100%;
+  height: 100vh; /* Changed from 100% for consistency */
   margin: 0;
+  overflow: hidden; /* Added */
+  font-family: 'Roboto', sans-serif; /* Verified, matches import */
 }
 
 body {
-  font-family: sans-serif;
+  background-color: #1E1E1E; /* Added */
+  color: #E0E0E0; /* Added */
+  font-size: 14px; /* Added */
+  /* font-family was moved to html, body */
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: #FFFFFF;
+  font-weight: bold;
 }
 
 header {
   display: flex;
   align-items: center;
-  padding: 10px 20px;
-  background-color: #2c3e50;
-  color: #ffffff;
+  padding: 15px 25px; /* Updated padding */
+  background-color: #2c3e50; /* Verified */
+  color: #ffffff; /* Verified */
 }
 
 #app-logo {
-  margin-right: 15px;
+  margin-right: 15px; /* Verified */
+  height: 40px; /* Added height constraint */
 }
 
 #app-title {
-  font-size: 1.5em;
-  margin: 0;
+  font-size: 1.5em; /* Verified */
+  margin: 0; /* Verified */
+  /* color: #FFFFFF; and font-weight: bold; are inherited from h1 global styles */
 }
 
 #main-app-area {
   display: flex;
   height: calc(100vh - 60px); /* Assuming header height is 60px */
-  background-color: #ecf0f1;
+  background-color: #1E1E1E; /* Changed to match body background for a continuous look */
 }
 
 #left-panel, #middle-panel, #right-panel {
   padding: 20px;
-  background-color: #ffffff;
+  background-color: #2D2D2D; /* Changed */
   margin: 10px;
   border-radius: 8px;
+  border: 1px solid #404040; /* Added */
 }
 
 #left-panel {
@@ -46,17 +61,33 @@ header {
 }
 
 #status-indicator {
-  background-color: #7f8c8d; /* Default "Not Recording" */
-  color: white;
+  background-color: #5A5A5A; /* Default "Not Recording" */
+  color: #B0B0B0;
   padding: 5px 10px;
   border-radius: 4px;
-  margin-bottom: 10px;
+  margin-bottom: 10px; /* Retained as it's part of layout */
   text-align: center;
   font-weight: bold;
 }
 
 #status-indicator.recording {
   background-color: #e74c3c; /* Red for "Recording" */
+  color: white;
+}
+
+#status-indicator.analyzing { /* JS currently sets inline, but class is better */
+  background-color: #f39c12;
+  color: white;
+}
+
+#status-indicator.complete { /* JS currently sets inline */
+  background-color: #2ecc71;
+  color: white;
+}
+
+#status-indicator.error { /* JS currently sets inline */
+  background-color: #c0392b;
+  color: white;
 }
 
 /* camera-container is styled inline in HTML for position: relative */
@@ -64,25 +95,26 @@ header {
 #camera-feed {
   /* width: 100%; /* Set in HTML attribute */
   aspect-ratio: 16 / 9;
-  background-color: #000;
-  border-radius: 6px;
+  background-color: #000000; /* Verified */
+  border-radius: 6px; /* Verified */
   /* margin-bottom: 10px; /* This is now on camera-container inline style */
 }
 
 #start-camera-btn {
   padding: 10px 20px;
   font-size: 1em;
-  background-color: #3498db;
+  background-color: #007ACC;
   color: white;
   border: none;
   border-radius: 4px;
   cursor: pointer;
-  width: 100%;
-  margin-top: 10px; /* Ensures space if camera-container has no bottom margin or if button is directly after it */
+  width: 100%; /* Retained from previous style */
+  margin-top: 10px; /* Retained from previous style */
+  font-weight: bold;
 }
 
 #start-camera-btn:hover {
-  background-color: #2980b9;
+  background-color: #005FA3;
 }
 
 #loading-overlay {
@@ -91,19 +123,19 @@ header {
   left: 0;
   width: 100%;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.7);
+  background-color: rgba(0, 0, 0, 0.75); /* Updated */
   display: none; /* Initially hidden, will be controlled by JS */
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  color: white;
+  /* color: #E0E0E0; /* Inherited from body or can be set on p */
   text-align: center;
   border-radius: 6px; /* Match camera feed's border radius */
 }
 
 .spinner {
-  border: 4px solid #f3f3f3; /* Light grey */
-  border-top: 4px solid #3498db; /* Blue */
+  border: 4px solid #555; /* Retained darker border for contrast */
+  border-top: 4px solid #007ACC; /* Match button blue */
   border-radius: 50%;
   width: 40px;
   height: 40px;
@@ -118,6 +150,7 @@ header {
 
 #loading-overlay p {
   font-size: 1.2em;
+  color: #FFFFFF; /* Explicitly white for overlay text */
 }
 
 #middle-panel {
@@ -130,12 +163,13 @@ header {
 #emotion-chart-container {
   width: 90%;
   height: 200px;
-  background-color: #dfe6e9;
+  background-color: #252525; /* Verified */
   margin-bottom: 20px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  border-radius: 6px;
+  display: flex; /* Verified */
+  justify-content: center; /* Verified */
+  align-items: center; /* Verified */
+  border-radius: 6px; /* Verified */
+  border: 1px solid #383838; /* Updated border color */
 }
 
 #image-analysis-circles-container {
@@ -146,58 +180,58 @@ header {
 }
 
 .image-circle-item {
-  position: relative;
-  width: 100px;
-  height: 100px;
-  border-radius: 50%;
-  background-color: #b2bec3;
-  margin: 0 10px;
-  overflow: hidden;
-  display: flex;
-  justify-content: center;
-  align-items: center;
+  position: relative; /* Verified */
+  width: 100px; /* Verified */
+  height: 100px; /* Verified */
+  border-radius: 50%; /* Verified */
+  background-color: #333333; /* Updated background */
+  margin: 0 10px; /* Verified */
+  overflow: hidden; /* Verified */
+  display: flex; /* Verified */
+  justify-content: center; /* Verified */
+  align-items: center; /* Verified */
+  border: 2px solid #007ACC; /* Added/Updated border */
+  box-shadow: 0 0 10px rgba(0, 122, 204, 0.4); /* Added/Updated box-shadow */
 }
 
 .image-circle-item img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
-  border-radius: 50%;
+  object-fit: cover; /* Verified */
+  border-radius: 50%; /* Verified */
 }
 
 .loading-shimmer {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-  box-shadow: 0 0 10px 5px rgba(52, 152, 219, 0); /* Initially transparent */
-  animation: shimmer-animation 2s infinite alternate;
+  position: absolute; /* Verified */
+  top: 0; /* Verified */
+  left: 0; /* Verified */
+  width: 100%; /* Verified */
+  height: 100%; /* Verified */
+  border-radius: 50%; /* Verified */
+  box-shadow: none; /* Remove old box-shadow, animation will handle it */
+  animation: shimmer-pulse-animation 1.8s infinite linear; /* Updated animation */
+  pointer-events: none; /* Added */
 }
 
-@keyframes shimmer-animation {
-  0% {
-    box-shadow: 0 0 8px 3px rgba(52, 152, 219, 0);
-  }
-  50% {
-    box-shadow: 0 0 12px 6px rgba(52, 152, 219, 0.7);
-  }
-  100% {
-    box-shadow: 0 0 8px 3px rgba(52, 152, 219, 0);
-  }
+/* @keyframes shimmer-animation { ... old animation removed ... } */
+
+@keyframes shimmer-pulse-animation {
+    0% { box-shadow: 0 0 8px 2px rgba(0, 122, 204, 0.3), inset 0 0 5px 1px rgba(0,122,204,0.2) ; }
+    70% { box-shadow: 0 0 16px 5px rgba(0, 122, 204, 0.7), inset 0 0 8px 2px rgba(0,122,204,0.5); }
+    100% { box-shadow: 0 0 8px 2px rgba(0, 122, 204, 0.3), inset 0 0 5px 1px rgba(0,122,204,0.2); }
 }
 
 .analysis-progress-text {
-  position: absolute;
-  bottom: -25px; /* Position below the circle */
-  left: 50%;
-  transform: translateX(-50%);
-  background-color: rgba(0, 0, 0, 0.6);
-  color: white;
-  padding: 2px 8px;
-  border-radius: 3px;
-  font-size: 0.8em;
+  position: absolute; /* Verified */
+  bottom: -25px; /* Position below the circle - Verified */
+  left: 50%; /* Verified */
+  transform: translateX(-50%); /* Verified */
+  background-color: rgba(0, 122, 204, 0.75); /* Updated */
+  color: #FFFFFF; /* Updated */
+  padding: 3px 8px; /* Updated */
+  border-radius: 3px; /* Verified */
+  font-size: 0.85em; /* Updated */
+  font-weight: bold; /* Added */
 }
 
 #right-panel {
@@ -208,20 +242,23 @@ header {
   padding-top: 20px;
 }
 
-#right-panel h3 {
-  margin-bottom: 15px;
-  color: #333;
+#right-panel h3 { /* Will be styled by the general h1-h6 rule */
+  margin-bottom: 15px; /* Verified */
+  /* color: #FFFFFF; and font-weight: bold; are inherited */
+  text-align: center; /* Added */
 }
 
 #llm-output-display {
-  width: 90%;
-  flex-grow: 1; /* Allows it to fill available vertical space in the flex container */
-  background-color: #dfe6e9;
-  padding: 15px;
-  border-radius: 6px;
-  font-family: monospace;
-  white-space: pre-wrap;
-  overflow-y: auto;
-  border: 1px solid #ccc;
-  margin-bottom: 10px; /* Ensure it doesn't touch the bottom of the panel */
+  width: 90%; /* Verified */
+  flex-grow: 1; /* Verified */
+  background-color: #252525; /* Verified */
+  padding: 15px; /* Verified */
+  border-radius: 6px; /* Verified */
+  font-family: 'Source Code Pro', monospace; /* Updated font */
+  white-space: pre-wrap; /* Verified */
+  overflow-y: auto; /* Verified */
+  border: 1px solid #383838; /* Updated border color */
+  margin-bottom: 10px; /* Verified */
+  color: #D0D0D0; /* Updated text color */
+  font-size: 0.9em; /* Added font size */
 }
