@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>EMOSCAN</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <img src="https://via.placeholder.com/40x40?text=LOGO" alt="EMOSCAN Logo" id="app-logo">
+    <h1 id="app-title">EMOSCAN</h1>
+  </header>
+  <main id="main-app-area">
+    <div id="left-panel">
+      <div id="status-indicator">Not Recording</div>
+      <div id="camera-container" style="position: relative; width: 100%; margin-bottom: 10px;">
+        <video id="camera-feed" autoplay muted width="100%"></video>
+        <div id="loading-overlay">
+          <div class="spinner"></div>
+          <p>分析中...</p>
+        </div>
+      </div>
+      <button id="start-camera-btn">START</button>
+    </div>
+    <div id="middle-panel">
+      <div id="emotion-chart-container">
+        <p>Emotion Bar Chart Placeholder</p>
+      </div>
+      <div id="image-analysis-circles-container">
+        <div class="image-circle-item">
+          <img src="https://via.placeholder.com/80x80?text=Frame" alt="Captured Frame">
+          <div class="loading-shimmer"></div>
+          <div class="analysis-progress-text">0%</div>
+        </div>
+        <div class="image-circle-item">
+          <img src="https://via.placeholder.com/80x80?text=Frame" alt="Captured Frame">
+          <div class="loading-shimmer"></div>
+          <div class="analysis-progress-text">0%</div>
+        </div>
+        <div class="image-circle-item">
+          <img src="https://via.placeholder.com/80x80?text=Frame" alt="Captured Frame">
+          <div class="loading-shimmer"></div>
+          <div class="analysis-progress-text">0%</div>
+        </div>
+        <div class="image-circle-item">
+          <img src="https://via.placeholder.com/80x80?text=Frame" alt="Captured Frame">
+          <div class="loading-shimmer"></div>
+          <div class="analysis-progress-text">0%</div>
+        </div>
+        <div class="image-circle-item">
+          <img src="https://via.placeholder.com/80x80?text=Frame" alt="Captured Frame">
+          <div class="loading-shimmer"></div>
+          <div class="analysis-progress-text">0%</div>
+        </div>
+      </div>
+    </div>
+    <div id="right-panel">
+      <h3>LLM OUTPUT</h3>
+      <div id="llm-output-display">
+        <p>LLM analysis results will appear here...</p>
+      </div>
+    </div>
+  </main>
+  <h1>Hello from Electron!</h1>
+  <script src="renderer.js"></script>
+</body>
+</html>

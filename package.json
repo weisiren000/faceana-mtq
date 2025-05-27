@@ -1,0 +1,27 @@
+{
+  "name": "app",
+  "version": "1.0.0",
+  "description": "### Stack",
+  "main": "main.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "electron ."
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/weisiren000/faceana-mtq.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/weisiren000/faceana-mtq/issues"
+  },
+  "homepage": "https://github.com/weisiren000/faceana-mtq#readme",
+  "devDependencies": {
+    "electron": "^36.3.1"
+  }
+}

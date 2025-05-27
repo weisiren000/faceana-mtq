@@ -1,2 +1,1 @@
-# .gitignore file
-rules
+node_modules/
