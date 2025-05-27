@@ -7,3 +7,4 @@ venv
 .venv
 .vscode
 test_app
+.env
