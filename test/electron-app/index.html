@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'">
+    <title>我的第一个 Electron 应用</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        h1 {
+            color: #333;
+        }
+        p {
+            color: #555;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            color: white;
+            background-color: #007bff;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #message {
+            margin-top: 20px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>👋 你好，Electron 世界！</h1>
+    <p>这是一个简单的 Electron 应用界面。</p>
+    <button id="myButton">点我向主进程发送消息</button>
+    <p id="message"></p>
+    <p>当前应用版本: <span id="app-version">加载中...</span></p>
+
+    <script>
+        const myButton = document.getElementById('myButton');
+        const messageElement = document.getElementById('message');
+        const appVersionElement = document.getElementById('app-version');
+
+        myButton.addEventListener('click', () => {
+            window.electronAPI.sendMessage('say-hello', '你好，主进程！我来自渲染进程。');
+            messageElement.textContent = '消息已发送！请查看 Node 控制台和等待回复。';
+        });
+
+        window.electronAPI.onReply('hello-reply', (reply) => {
+            messageElement.textContent = `收到主进程回复: ${reply}`;
+        });
+
+        // 调用 preload 中暴露的 API 获取应用版本
+        window.electronAPI.getAppVersion().then(version => {
+            appVersionElement.textContent = version;
+        }).catch(err => {
+            appVersionElement.textContent = '获取失败';
+            console.error('获取应用版本失败:', err);
+        });
+    </script>
+</body>
+</html>

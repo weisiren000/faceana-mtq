@@ -1,0 +1,22 @@
+{
+  "name": "my-electron-app",
+  "version": "1.0.0",
+  "description": "一个简单的Electron应用",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron-forge start",
+    "build": "echo '构建命令需要根据你选择的打包工具来定义'",
+    "make": "electron-forge make",
+    "package": "electron-forge package"
+  },
+  "keywords": [
+    "Electron",
+    "demo"
+  ],
+  "author": "你的名字",
+  "license": "MIT",
+  "devDependencies": {
+    "electron-prebuilt-compile": "28.3.3"
+  },
+  "dependencies": {}
+}
