@@ -31,11 +31,11 @@ MODEL = {
         gemma-3n-e4b-it
         }
 
-# OpenAI API密钥
+<!-- # OpenAI API密钥
 OPENAI_API_KEY=NONE
 
 # Anthropic API密钥
-ANTHROPIC_API_KEY=NONE
+ANTHROPIC_API_KEY=NONE --> 
 
 # 识别的情绪类别：
    - 愤怒(Angry)

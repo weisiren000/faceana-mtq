@@ -9,3 +9,11 @@
 2. 调用Gemini API、openrouter进行人像情绪识别，使用模型：
     - GEMINI_MODEL=gemma-3-27b-it
     - OPENROUTER_MODEL=google/gemma-3-27b-it:free
+
+# 一些情况
+1. 目前用uv创建了虚拟环境使用 .venv\Scripts\activate 激活虚拟环境（faceana-mtq目录下）
+
+# 技术栈选择
+1. 语言：python
+2. python包管理器: uv
+3. 桌面UI框架: Electron

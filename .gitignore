@@ -8,3 +8,6 @@ venv
 .vscode
 test_app
 .env
+**/node_modules
+**/package-lock.json
+**/.git_disabled
