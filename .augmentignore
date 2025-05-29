@@ -13,3 +13,4 @@ node_modules
 flutter
 */flutter
 .test_emoscan
+**/.git_disabled
