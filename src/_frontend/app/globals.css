@@ -49,6 +49,59 @@ body {
   .bg-black\/80.scrollbar-hide::-webkit-scrollbar {
     display: none !important;
   }
+
+  /* AI输出区域透视效果 */
+  .ai-output-container::-webkit-scrollbar {
+    display: none;
+  }
+
+  .ai-output-container {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  /* 透视文字效果 - 简化版本，确保文字可见 */
+  .perspective-text-effect {
+    position: relative;
+    /* 使用简单的透视变换，不使用background-clip避免文字消失 */
+    transform: perspective(600px) rotateX(1deg);
+    transform-origin: center center;
+    /* 添加轻微的透明度渐变效果 */
+    opacity: 0.9;
+  }
+
+  /* 文字大小渐变效果 */
+  .text-scale-gradient {
+    /* 移除透明背景，保持文字可见 */
+    transform: scaleY(0.98);
+    transform-origin: center center;
+  }
+
+  /* 顶部文字缩小效果 */
+  .text-scale-gradient::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 33.33%;
+    transform: scaleX(0.85) scaleY(0.9);
+    transform-origin: center top;
+    pointer-events: none;
+  }
+
+  /* 底部文字缩小效果 */
+  .text-scale-gradient::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 33.33%;
+    transform: scaleX(0.85) scaleY(0.9);
+    transform-origin: center bottom;
+    pointer-events: none;
+  }
 }
 
 @layer base {

@@ -38,7 +38,9 @@ function createWindow() {
   // 加载应用
   if (isDev) {
     // 开发模式：连接到Next.js开发服务器
-    mainWindow.loadURL('http://localhost:3000')
+    // 从环境变量获取端口，或使用默认端口
+    const devPort = process.env.PORT || 3000
+    mainWindow.loadURL(`http://localhost:${devPort}`)
 
     // 开发模式下的热重载
     try {

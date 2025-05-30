@@ -15,7 +15,8 @@ MODEL = {
         google/gemma-3-27b-it:free，
         microsoft/phi-4-reasoning-plus:free，
         moonshotai/kimi-vl-a3b-thinking:free，
-        qwen/qwen2.5-vl-32b-instruct:free
+        qwen/qwen2.5-vl-32b-instruct:free,
+        google/gemini-2.0-flash-exp:free
         }
 
 # Gemini API密钥
@@ -26,9 +27,7 @@ MODEL = {
         gemini-2.0-flash，
         gemini-2.0-flash-001，
         gemini-2.0-flash-exp，
-        gemini-2.5-flash-preview-05-20，
-        gemma-3-27b-it，
-        gemma-3n-e4b-it
+        gemma-3-27b-it
         }
 
 <!-- # OpenAI API密钥

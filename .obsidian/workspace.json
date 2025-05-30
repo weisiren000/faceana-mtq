@@ -14,7 +14,7 @@
               "type": "3d_graph_view",
               "state": {},
               "icon": "lucide-file",
-              "title": "3D-Graph"
+              "title": "插件不再活动"
             }
           },
           {
@@ -24,31 +24,21 @@
               "type": "3d_graph_view",
               "state": {},
               "icon": "lucide-file",
-              "title": "3D-Graph"
+              "title": "插件不再活动"
             }
           },
           {
             "id": "a4d4d4bbd4c2c507",
             "type": "leaf",
             "state": {
-              "type": "3d_graph_view",
+              "type": "graph",
               "state": {},
-              "icon": "lucide-file",
-              "title": "3D-Graph"
-            }
-          },
-          {
-            "id": "bb7a73224188ec01",
-            "type": "leaf",
-            "state": {
-              "type": "3d_graph_view",
-              "state": {},
-              "icon": "lucide-file",
-              "title": "3D-Graph"
+              "icon": "lucide-git-fork",
+              "title": "关系图谱"
             }
           }
         ],
-        "currentTab": 3
+        "currentTab": 2
       }
     ],
     "direction": "vertical"
@@ -200,7 +190,7 @@
       "markdown-importer:打开 Markdown 格式转换器": false
     }
   },
-  "active": "c405bd9f825f9fa6",
+  "active": "a4d4d4bbd4c2c507",
   "lastOpenFiles": [
     "FRONTEND_RECONSTRUCTION_README.md",
     "start_frontend_reconstruction.py",
