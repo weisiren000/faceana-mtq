@@ -1,22 +1,26 @@
 {
-  "name": "my-electron-app",
+  "name": "emoscan-electron-app",
   "version": "1.0.0",
-  "description": "一个简单的Electron应用",
+  "description": "EMOSCAN Neural Emotion Analysis System - Electron Desktop App",
   "main": "main.js",
   "scripts": {
-    "start": "electron-forge start",
+    "start": "cross-env NODE_ENV=development electron .",
+    "dev": "cross-env NODE_ENV=development electron .",
     "build": "echo '构建命令需要根据你选择的打包工具来定义'",
     "make": "electron-forge make",
     "package": "electron-forge package"
   },
   "keywords": [
     "Electron",
-    "demo"
+    "EMOSCAN",
+    "Emotion Analysis",
+    "AI"
   ],
-  "author": "你的名字",
+  "author": "EMOSCAN Team",
   "license": "MIT",
   "devDependencies": {
-    "electron-prebuilt-compile": "28.3.3"
+    "electron": "^28.0.0",
+    "cross-env": "^7.0.3"
   },
   "dependencies": {}
 }

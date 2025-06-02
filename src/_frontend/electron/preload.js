@@ -35,10 +35,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
 window.addEventListener('DOMContentLoaded', () => {
   // 可以在这里添加一些初始化代码
   console.log('EmoScan Electron App loaded')
-  
-  // 添加Electron特有的样式类
-  document.body.classList.add('electron-app')
-  
+
+  // 注意：electron-app类现在由React组件管理，避免hydration不匹配
+
   // 设置应用标题
   document.title = 'EmoScan - 情感分析系统'
 })

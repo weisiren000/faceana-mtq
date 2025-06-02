@@ -12,6 +12,7 @@ function createWindow() {
     height: 900,
     minWidth: 1200,
     minHeight: 800,
+    title: 'EmoScan', // 设置窗口标题
     webPreferences: {
       nodeIntegration: false, // 出于安全考虑
       contextIsolation: true, // 启用上下文隔离
@@ -28,7 +29,10 @@ function createWindow() {
   // 窗口准备好后显示
   mainWindow.once('ready-to-show', () => {
     mainWindow.show()
-    
+
+    // 确保窗口标题为EmoScan
+    mainWindow.setTitle('EmoScan')
+
     // 开发模式下打开开发者工具
     if (isDev) {
       mainWindow.webContents.openDevTools()
@@ -71,10 +75,16 @@ function createWindow() {
   // 阻止导航到外部URL
   mainWindow.webContents.on('will-navigate', (event, navigationUrl) => {
     const parsedUrl = new URL(navigationUrl)
-    
+
     if (parsedUrl.origin !== 'http://localhost:3000' && !isDev) {
       event.preventDefault()
     }
+  })
+
+  // 监听页面标题变化，确保始终显示EmoScan
+  mainWindow.webContents.on('page-title-updated', (event) => {
+    event.preventDefault() // 阻止页面更改标题
+    mainWindow.setTitle('EmoScan')
   })
 }
 

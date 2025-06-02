@@ -1,13 +1,237 @@
-# .gitignore file
-rules
-**/__pycache__
-**/venv
-**/.venv
-venv
-.venv
-.vscode
-test_app
+# EmoScan 项目 .gitignore 文件
+
+# =============================================================================
+# 环境变量和敏感信息
+# =============================================================================
 .env
-**/node_modules
-**/package-lock.json
-**/.git_disabled
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# =============================================================================
+# Python 相关
+# =============================================================================
+# 字节码文件
+__pycache__/
+*.py[cod]
+*$py.class
+**/__pycache__/
+
+# 虚拟环境
+venv/
+.venv/
+**/venv/
+**/.venv/
+env/
+.env/
+
+# Python 分发/打包
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# PyInstaller
+*.manifest
+*.spec
+
+# 单元测试/覆盖率报告
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+
+# =============================================================================
+# Node.js 相关
+# =============================================================================
+# 依赖
+node_modules/
+**/node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# 包管理器锁文件 (保留 package-lock.json，删除 pnpm-lock.yaml)
+pnpm-lock.yaml
+**/pnpm-lock.yaml
+
+# 运行时数据
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# =============================================================================
+# Next.js 相关
+# =============================================================================
+# Next.js 构建输出
+.next/
+out/
+**/out/
+
+# Next.js 缓存
+.next/cache/
+
+# Vercel
+.vercel
+
+# =============================================================================
+# Electron 相关
+# =============================================================================
+# Electron 构建输出
+dist/
+dist-electron/
+**/dist/
+**/dist-electron/
+
+# Electron 缓存
+.electron-gyp/
+
+# =============================================================================
+# 开发工具和编辑器
+# =============================================================================
+# VS Code
+.vscode/
+*.code-workspace
+
+# JetBrains IDEs
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Vim
+*.swp
+*.swo
+*~
+
+# =============================================================================
+# 操作系统相关
+# =============================================================================
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+._*
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+
+# =============================================================================
+# 日志文件
+# =============================================================================
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# =============================================================================
+# 临时文件和缓存
+# =============================================================================
+# 临时文件
+tmp/
+temp/
+*.tmp
+*.temp
+
+# 缓存目录
+.cache/
+.parcel-cache/
+
+# =============================================================================
+# 项目特定文件
+# =============================================================================
+# 项目文档和总结 (根据需要调整)
+_EXP/
+_SUM/
+docs/
+rules/
+.rules/
+
+# 测试相关
+test_app/
+.test/
+
+# Obsidian 笔记
+.obsidian/
+obsidian/
+
+# 上传文件和用户数据
+uploads/
+user_data/
+data/
+
+# 备份文件
+*.bak
+*.backup
+
+# =============================================================================
+# 构建和部署相关
+# =============================================================================
+# 构建工具
+.grunt/
+.sass-cache/
+.stylelintcache
+
+# TypeScript
+*.tsbuildinfo
+
+# ESLint
+.eslintcache
+
+# =============================================================================
+# 其他
+# =============================================================================
+# Git 相关
+.git_disabled/
+**/.git_disabled/
+
+# 压缩文件
+*.zip
+*.tar.gz
+*.rar
+
+# 证书文件
+*.pem
+*.key
+*.crt
+
+# 数据库文件
+*.db
+*.sqlite
+*.sqlite3

@@ -1,10 +1,11 @@
 import type { Metadata } from 'next'
 import './globals.css'
+import ClientBodyClass from './client-body-class'
 
 export const metadata: Metadata = {
-  title: 'v0 App',
-  description: 'Created with v0',
-  generator: 'v0.dev',
+  title: 'EmoScan',
+  description: 'EmoScan - 情感分析桌面应用',
+  generator: 'EmoScan',
 }
 
 export default function RootLayout({
@@ -14,7 +15,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <ClientBodyClass />
+        {children}
+      </body>
     </html>
   )
 }

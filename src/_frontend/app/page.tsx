@@ -78,14 +78,18 @@ function useTypewriter(text: string, baseSpeed: number = 50) {
     }
   }, [text, baseSpeed])
 
-  // 光标闪烁效果
+  // 光标闪烁效果 - 只在打字时闪烁
   useEffect(() => {
-    const cursorInterval = setInterval(() => {
-      setShowCursor(prev => !prev)
-    }, 500)
-
-    return () => clearInterval(cursorInterval)
-  }, [])
+    if (isTyping) {
+      const cursorInterval = setInterval(() => {
+        setShowCursor(prev => !prev)
+      }, 500)
+      return () => clearInterval(cursorInterval)
+    } else {
+      // 打字完成后隐藏光标
+      setShowCursor(false)
+    }
+  }, [isTyping])
 
   return { displayText, isTyping, showCursor, typingProgress }
 }
@@ -181,7 +185,7 @@ export default function EmoscanApp() {
     return () => clearInterval(interval)
   }, [])
 
-  // 隐藏滚动条和添加文字大小渐变效果
+  // 隐藏滚动条和添加文字大小渐变效果 + 无限循环滚动
   useEffect(() => {
     if (outputRef.current) {
       const element = outputRef.current
@@ -201,190 +205,179 @@ export default function EmoscanApp() {
         /* 3D圆柱体透视文字容器 */
         .cylindrical-text-container {
           position: relative;
-          perspective: 1000px;
+          perspective: 1200px;
           transform-style: preserve-3d;
           overflow: hidden;
         }
 
-        /* 3D圆柱体文字显示效果 */
-        .cylindrical-text-display {
-          position: relative;
-          background: linear-gradient(
-            to bottom,
-            /* 顶部边缘 - 完全透明 */
-            transparent 0%,
-            transparent 5%,
-            /* 渐入区域 */
-            rgba(0,255,136,0.1) 10%,
-            rgba(0,255,136,0.3) 15%,
-            rgba(0,255,136,0.5) 20%,
-            rgba(0,255,136,0.7) 25%,
-            rgba(0,255,136,0.9) 30%,
-            /* 中心区域 - 最亮 */
-            rgba(0,255,136,1) 40%,
-            rgba(0,255,136,1) 60%,
-            /* 渐出区域 */
-            rgba(0,255,136,0.9) 70%,
-            rgba(0,255,136,0.7) 75%,
-            rgba(0,255,136,0.5) 80%,
-            rgba(0,255,136,0.3) 85%,
-            rgba(0,255,136,0.1) 90%,
-            /* 底部边缘 - 完全透明 */
-            transparent 95%,
-            transparent 100%
-          );
-          -webkit-background-clip: text;
-          background-clip: text;
-          color: transparent;
-
-          /* 3D透视变形 */
-          transform: perspective(800px) rotateX(8deg);
+        /* 每行文字的基础样式 */
+        .text-line {
+          display: block;
+          text-align: center;
+          font-family: 'Courier New', monospace;
+          white-space: pre-wrap;
+          transition: all 0.08s ease-out;
           transform-origin: center center;
-
-          /* 字体大小渐变 - 通过CSS mask实现 */
-          mask: linear-gradient(
-            to bottom,
-            transparent 0%,
-            transparent 5%,
-            rgba(0,0,0,0.3) 10%,
-            rgba(0,0,0,0.6) 15%,
-            rgba(0,0,0,0.8) 20%,
-            rgba(0,0,0,0.9) 25%,
-            rgba(0,0,0,1) 30%,
-            rgba(0,0,0,1) 70%,
-            rgba(0,0,0,0.9) 75%,
-            rgba(0,0,0,0.8) 80%,
-            rgba(0,0,0,0.6) 85%,
-            rgba(0,0,0,0.3) 90%,
-            transparent 95%,
-            transparent 100%
-          );
-          -webkit-mask: linear-gradient(
-            to bottom,
-            transparent 0%,
-            transparent 5%,
-            rgba(0,0,0,0.3) 10%,
-            rgba(0,0,0,0.6) 15%,
-            rgba(0,0,0,0.8) 20%,
-            rgba(0,0,0,0.9) 25%,
-            rgba(0,0,0,1) 30%,
-            rgba(0,0,0,1) 70%,
-            rgba(0,0,0,0.9) 75%,
-            rgba(0,0,0,0.8) 80%,
-            rgba(0,0,0,0.6) 85%,
-            rgba(0,0,0,0.3) 90%,
-            transparent 95%,
-            transparent 100%
-          );
-
-          /* 字体大小变化效果 */
-          font-size: 14px;
-          background-size: 100% 100%;
-
-          /* 文字阴影增强3D效果 */
-          text-shadow:
-            0 0 15px rgba(0,255,136,0.6),
-            0 2px 8px rgba(0,0,0,0.4),
-            0 0 30px rgba(0,255,136,0.3);
-
-          /* 添加字体大小的视觉变化 */
-          background-image:
-            linear-gradient(to bottom, transparent 0%, transparent 100%),
-            linear-gradient(
-              to bottom,
-              /* 模拟字体大小变化的视觉效果 */
-              rgba(0,255,136,0) 0%,
-              rgba(0,255,136,0.1) 20%,
-              rgba(0,255,136,0.2) 40%,
-              rgba(0,255,136,0.2) 60%,
-              rgba(0,255,136,0.1) 80%,
-              rgba(0,255,136,0) 100%
-            );
-          background-blend-mode: overlay;
         }
 
-        /* 添加伪元素来增强3D深度效果 */
-        .cylindrical-text-display::before {
-          content: '';
-          position: absolute;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background: linear-gradient(
-            to bottom,
-            rgba(0,0,0,0.8) 0%,
-            rgba(0,0,0,0.4) 15%,
-            rgba(0,0,0,0) 30%,
-            rgba(0,0,0,0) 70%,
-            rgba(0,0,0,0.4) 85%,
-            rgba(0,0,0,0.8) 100%
-          );
-          pointer-events: none;
-          z-index: 1;
+        /* 滚动容器优化 */
+        .ai-output-container {
+          scroll-behavior: smooth;
+          will-change: scroll-position;
+          -webkit-overflow-scrolling: touch;
         }
 
-        .cylindrical-text-display::after {
-          content: '';
-          position: absolute;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          background: radial-gradient(
-            ellipse at center,
-            transparent 60%,
-            rgba(0,0,0,0.3) 80%,
-            rgba(0,0,0,0.6) 100%
-          );
-          pointer-events: none;
-          z-index: 2;
-        }
+        /* 移除阻止滚动的伪元素 */
       `
       document.head.appendChild(style)
 
-      // 3D圆柱体效果的滚动监听器
+      // 3D圆柱体效果的滚动监听器 - 优化性能和平滑度
+      let animationId: number
+
       const handleScroll = () => {
-        const textElement = element.querySelector('.cylindrical-text-display') as HTMLElement
-        if (!textElement) return
+        // 使用requestAnimationFrame优化性能
+        if (animationId) {
+          cancelAnimationFrame(animationId)
+        }
 
-        const containerRect = element.getBoundingClientRect()
-        const containerHeight = containerRect.height
+        animationId = requestAnimationFrame(() => {
+          const textLines = element.querySelectorAll('.text-line') as NodeListOf<HTMLElement>
+          if (textLines.length === 0) return
 
-        // 动态调整文字的3D效果
-        const scrollTop = element.scrollTop
+          const containerRect = element.getBoundingClientRect()
+          const containerHeight = containerRect.height
+          const containerCenter = containerHeight / 2
+
+          // 为每一行文字计算透视效果
+          textLines.forEach((line) => {
+            const lineRect = line.getBoundingClientRect()
+            const lineCenter = lineRect.top + lineRect.height / 2 - containerRect.top
+
+            // 计算距离容器中心的距离 (0-1, 0为中心)
+            const distanceFromCenter = Math.abs(lineCenter - containerCenter) / containerCenter
+
+            // 限制距离范围，使用更平滑的曲线
+            const clampedDistance = Math.min(distanceFromCenter, 1)
+            const smoothDistance = Math.pow(clampedDistance, 0.8) // 使用幂函数创建更平滑的过渡
+
+            // 计算透视效果参数 - 调整为更温和的变化
+            // 字体大小：中心最大(16px)，边缘最小(11px)
+            const fontSize = 16 - (smoothDistance * 5)
+
+            // 透明度：中心最亮(1.0)，边缘最暗(0.4) - 确保边缘文字仍然可见
+            const opacity = 1.0 - (smoothDistance * 0.6)
+
+            // 宽度：中心最宽(100%)，边缘最窄(75%)
+            const width = 100 - (smoothDistance * 25)
+
+            // Z轴位移：创建深度效果
+            const translateZ = -smoothDistance * 25
+
+            // X轴旋转：增强透视效果
+            const rotateX = smoothDistance * 6
+
+            // 应用样式
+            line.style.fontSize = `${fontSize}px`
+            line.style.opacity = `${opacity}`
+            line.style.width = `${width}%`
+            line.style.margin = '0 auto'
+            line.style.transform = `translateZ(${translateZ}px) rotateX(${rotateX}deg)`
+            line.style.color = `rgba(0, 255, 136, ${opacity})`
+            line.style.textShadow = `
+              0 0 ${12 * opacity}px rgba(0,255,136,${opacity * 0.5}),
+              0 ${1.5 * opacity}px ${6 * opacity}px rgba(0,0,0,0.3),
+              0 0 ${25 * opacity}px rgba(0,255,136,${opacity * 0.25})
+            `
+          })
+        })
+      }
+
+      // 丝滑滚动处理
+      let isScrolling = false
+      let scrollTimeout: number
+
+      const handleWheel = (e: WheelEvent) => {
+        e.preventDefault()
+
+        const scrollAmount = e.deltaY * 0.8 // 调整滚动灵敏度
+        const currentScrollTop = element.scrollTop
         const scrollHeight = element.scrollHeight
         const clientHeight = element.clientHeight
+        const maxScroll = scrollHeight - clientHeight
 
-        // 计算滚动进度 (0-1)
-        const scrollProgress = scrollHeight > clientHeight ? scrollTop / (scrollHeight - clientHeight) : 0
+        if (maxScroll <= 0) return // 内容不够长，不需要滚动
 
-        // 基于滚动位置调整3D变换
-        const rotateX = 8 + Math.sin(scrollProgress * Math.PI * 4) * 2 // 8±2度的旋转
-        const perspective = 800 + Math.cos(scrollProgress * Math.PI * 4) * 100 // 800±100px的透视
+        let newScrollTop = Math.max(0, Math.min(maxScroll, currentScrollTop + scrollAmount))
 
-        textElement.style.transform = `perspective(${perspective}px) rotateX(${rotateX}deg)`
+        // 使用requestAnimationFrame实现丝滑滚动
+        if (!isScrolling) {
+          isScrolling = true
 
-        // 动态调整渐变位置以跟随滚动 - 创建"轮胎"滚动效果
-        const gradientOffset = (scrollProgress * 100) % 100 // 0-100% 循环
-        const adjustedOffset = Math.sin((gradientOffset / 100) * Math.PI * 2) * 20 // -20% 到 +20% 的正弦波偏移
+          const smoothScroll = () => {
+            const diff = newScrollTop - element.scrollTop
+            const step = diff * 0.15 // 缓动系数，值越小越平滑
 
-        // 更新背景和遮罩位置
-        textElement.style.backgroundPosition = `0% ${50 + adjustedOffset}%`
-        if (textElement.style.maskPosition !== undefined) {
-          textElement.style.maskPosition = `0% ${50 + adjustedOffset}%`
+            if (Math.abs(diff) > 0.5) {
+              element.scrollTop += step
+              requestAnimationFrame(smoothScroll)
+            } else {
+              element.scrollTop = newScrollTop
+              isScrolling = false
+            }
+          }
+
+          requestAnimationFrame(smoothScroll)
+        } else {
+          // 如果正在滚动，更新目标位置
+          newScrollTop = Math.max(0, Math.min(maxScroll, newScrollTop + scrollAmount))
         }
-        if (textElement.style.webkitMaskPosition !== undefined) {
-          textElement.style.webkitMaskPosition = `0% ${50 + adjustedOffset}%`
-        }
+
+        // 清除之前的超时，设置新的超时来重置滚动状态
+        clearTimeout(scrollTimeout)
+        scrollTimeout = window.setTimeout(() => {
+          isScrolling = false
+        }, 150)
+      }
+
+      // 初始化文本行样式
+      const initializeTextLines = () => {
+        // 延迟执行，确保DOM已更新
+        setTimeout(() => {
+          handleScroll()
+        }, 50)
       }
 
       // 添加滚动监听器
       element.addEventListener('scroll', handleScroll, { passive: true })
+      element.addEventListener('wheel', handleWheel, { passive: false })
+
+      // 监听DOM变化，当文本内容更新时重新计算样式
+      const observer = new MutationObserver(() => {
+        initializeTextLines()
+      })
+
+      observer.observe(element, {
+        childList: true,
+        subtree: true,
+        characterData: true
+      })
+
+      // 初始化
+      initializeTextLines()
 
       return () => {
         element.removeEventListener('scroll', handleScroll)
+        element.removeEventListener('wheel', handleWheel)
+        observer.disconnect()
         document.head.removeChild(style)
+
+        // 清理动画帧和超时
+        if (animationId) {
+          cancelAnimationFrame(animationId)
+        }
+        if (scrollTimeout) {
+          clearTimeout(scrollTimeout)
+        }
       }
     }
   }, [])
@@ -974,30 +967,54 @@ export default function EmoscanApp() {
                 msOverflowStyle: 'none',
               } as React.CSSProperties}
             >
+              {/* 边缘渐变遮罩层 - 调整为更温和的渐变，确保内容可见 */}
+              <div
+                className="absolute inset-0 pointer-events-none z-10"
+                style={{
+                  background: `linear-gradient(
+                    to bottom,
+                    rgba(0,0,0,0.6) 0%,
+                    rgba(0,0,0,0.3) 8%,
+                    rgba(0,0,0,0.1) 20%,
+                    transparent 30%,
+                    transparent 70%,
+                    rgba(0,0,0,0.1) 80%,
+                    rgba(0,0,0,0.3) 92%,
+                    rgba(0,0,0,0.6) 100%
+                  )`,
+                  borderRadius: 'inherit',
+                }}
+              />
               {/* 3D圆柱体透视文字容器 */}
               <div
                 className="relative cylindrical-text-container"
                 style={{
                   minHeight: '100%',
-                  padding: '20px 16px',
+                  padding: '40px 16px', // 增加上下内边距，确保顶部和底部文字有足够空间
                   textAlign: 'center', // 所有文字居中对齐
+                  height: 'auto', // 允许内容撑开高度
                 }}
               >
-                <pre
+                <div
                   className="cylindrical-text-display"
                   style={{
                     margin: 0,
                     padding: 0,
-                    fontFamily: 'Courier New, monospace',
-                    whiteSpace: 'pre-wrap',
-                    wordBreak: 'break-word',
-                    textAlign: 'center',
                     lineHeight: '1.8',
-                    color: '#00ff88',
                   } as React.CSSProperties}
                 >
-                  {displayText || "Awaiting analysis data..."}
-                </pre>
+                  {(displayText || "Awaiting analysis data...").split('\n').map((line, index) => (
+                    <div
+                      key={index}
+                      className="text-line"
+                      style={{
+                        marginBottom: '0.2em',
+                      }}
+                    >
+                      {line || '\u00A0'} {/* 使用非断行空格保持空行 */}
+                    </div>
+                  ))}
+                </div>
 
                 {/* 光标 */}
                 {(isTyping || (showCursor && displayText)) && (
