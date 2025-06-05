@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
+import GenerationPanel from "../components/emotion-to-image/GenerationPanel"
 
 interface EmotionData {
   emotion: string
@@ -112,6 +113,7 @@ export default function EmoscanApp() {
   const [scanLine, setScanLine] = useState(0)
   const [currentTime, setCurrentTime] = useState("")
   const [analysisMode, setAnalysisMode] = useState<AnalysisMode>(AnalysisMode.QUICK)
+  const [showGenerationPanel, setShowGenerationPanel] = useState(false)
 
   // 使用打字机效果
   const { displayText, isTyping, showCursor, typingProgress } = useTypewriter(llmOutput, 25)
@@ -957,80 +959,96 @@ export default function EmoscanApp() {
         {/* 右侧面板 - LLM输出 */}
         <div className="w-1/3 bg-black/50 backdrop-blur-sm p-6">
           <div className="h-full flex flex-col">
-            <h2 className="text-lg font-semibold mb-4 text-cyan-400">AI ANALYSIS OUTPUT</h2>
-
-            <div
-              ref={outputRef}
-              className="flex-1 border border-green-400/30 rounded-lg bg-black/80 overflow-y-auto overflow-x-hidden ai-output-container relative"
-              style={{
-                scrollbarWidth: 'none',
-                msOverflowStyle: 'none',
-              } as React.CSSProperties}
-            >
-              {/* 边缘渐变遮罩层 - 调整为更温和的渐变，确保内容可见 */}
-              <div
-                className="absolute inset-0 pointer-events-none z-10"
-                style={{
-                  background: `linear-gradient(
-                    to bottom,
-                    rgba(0,0,0,0.6) 0%,
-                    rgba(0,0,0,0.3) 8%,
-                    rgba(0,0,0,0.1) 20%,
-                    transparent 30%,
-                    transparent 70%,
-                    rgba(0,0,0,0.1) 80%,
-                    rgba(0,0,0,0.3) 92%,
-                    rgba(0,0,0,0.6) 100%
-                  )`,
-                  borderRadius: 'inherit',
-                }}
-              />
-              {/* 3D圆柱体透视文字容器 */}
-              <div
-                className="relative cylindrical-text-container"
-                style={{
-                  minHeight: '100%',
-                  padding: '40px 16px', // 增加上下内边距，确保顶部和底部文字有足够空间
-                  textAlign: 'center', // 所有文字居中对齐
-                  height: 'auto', // 允许内容撑开高度
-                }}
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-semibold text-cyan-400">AI ANALYSIS OUTPUT</h2>
+              <button
+                onClick={() => setShowGenerationPanel(!showGenerationPanel)}
+                className="text-xs bg-purple-600/20 border border-purple-400/50 rounded px-2 py-1 text-purple-400 hover:bg-purple-600/30 transition-all duration-200"
               >
+                {showGenerationPanel ? "查看分析结果" : "生成情绪图像"}
+              </button>
+            </div>
+
+            {!showGenerationPanel ? (
+              // 原来的LLM输出显示
+              <div
+                ref={outputRef}
+                className="flex-1 border border-green-400/30 rounded-lg bg-black/80 overflow-y-auto overflow-x-hidden ai-output-container relative"
+                style={{
+                  scrollbarWidth: 'none',
+                  msOverflowStyle: 'none',
+                } as React.CSSProperties}
+              >
+                {/* 边缘渐变遮罩层 - 调整为更温和的渐变，确保内容可见 */}
                 <div
-                  className="cylindrical-text-display"
+                  className="absolute inset-0 pointer-events-none z-10"
                   style={{
-                    margin: 0,
-                    padding: 0,
-                    lineHeight: '1.8',
-                  } as React.CSSProperties}
+                    background: `linear-gradient(
+                      to bottom,
+                      rgba(0,0,0,0.6) 0%,
+                      rgba(0,0,0,0.3) 8%,
+                      rgba(0,0,0,0.1) 20%,
+                      transparent 30%,
+                      transparent 70%,
+                      rgba(0,0,0,0.1) 80%,
+                      rgba(0,0,0,0.3) 92%,
+                      rgba(0,0,0,0.6) 100%
+                    )`,
+                    borderRadius: 'inherit',
+                  }}
+                />
+                {/* 3D圆柱体透视文字容器 */}
+                <div
+                  className="relative cylindrical-text-container"
+                  style={{
+                    minHeight: '100%',
+                    padding: '40px 16px', // 增加上下内边距，确保顶部和底部文字有足够空间
+                    textAlign: 'center', // 所有文字居中对齐
+                    height: 'auto', // 允许内容撑开高度
+                  }}
                 >
-                  {(displayText || "Awaiting analysis data...").split('\n').map((line, index) => (
-                    <div
-                      key={index}
-                      className="text-line"
+                  <div
+                    className="cylindrical-text-display"
+                    style={{
+                      margin: 0,
+                      padding: 0,
+                      lineHeight: '1.8',
+                    } as React.CSSProperties}
+                  >
+                    {(displayText || "Awaiting analysis data...").split('\n').map((line, index) => (
+                      <div
+                        key={index}
+                        className="text-line"
+                        style={{
+                          marginBottom: '0.2em',
+                        }}
+                      >
+                        {line || '\u00A0'} {/* 使用非断行空格保持空行 */}
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* 光标 */}
+                  {(isTyping || (showCursor && displayText)) && (
+                    <span
+                      className={`inline-block w-1 h-4 ml-1 bg-green-400 ${
+                        showCursor ? 'opacity-100' : 'opacity-0'
+                      } transition-opacity duration-300`}
                       style={{
-                        marginBottom: '0.2em',
+                        fontSize: '14px', // 光标始终保持中心大小
                       }}
                     >
-                      {line || '\u00A0'} {/* 使用非断行空格保持空行 */}
-                    </div>
-                  ))}
+                      |
+                    </span>
+                  )}
                 </div>
-
-                {/* 光标 */}
-                {(isTyping || (showCursor && displayText)) && (
-                  <span
-                    className={`inline-block w-1 h-4 ml-1 bg-green-400 ${
-                      showCursor ? 'opacity-100' : 'opacity-0'
-                    } transition-opacity duration-300`}
-                    style={{
-                      fontSize: '14px', // 光标始终保持中心大小
-                    }}
-                  >
-                    |
-                  </span>
-                )}
               </div>
-            </div>
+            ) : (
+              // 图像生成面板
+              <div className="flex-1 overflow-y-auto">
+                <GenerationPanel emotionData={emotionData} />
+              </div>
+            )}
           </div>
         </div>
       </div>

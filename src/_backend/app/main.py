@@ -12,6 +12,7 @@ import uvicorn
 
 from .services.emotion_analyzer import EmotionAnalyzer
 from .models.emotion import AnalysisResponse, BatchAnalysisResponse
+from .api import router as api_router
 
 # 配置日志
 logging.basicConfig(
@@ -30,7 +31,7 @@ app = FastAPI(
 # 配置CORS（允许前端访问）
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:3001"],
+    allow_origins=["*"],  # 允许所有来源，包括ComfyUI
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -38,6 +39,10 @@ app.add_middleware(
 
 # 初始化情绪分析器
 emotion_analyzer = EmotionAnalyzer()
+
+# 注册API路由
+app.include_router(api_router)
+
 @app.get("/")
 async def root():
     """健康检查端点"""
