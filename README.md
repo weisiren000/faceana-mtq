@@ -231,17 +231,10 @@ python test_comfyui.py
 
 ## 🙏 致谢
 
-- [OpenAI](https://openai.com) - AI 模型支持
 - [Face++](https://www.faceplusplus.com) - 人脸识别服务
 - [ComfyUI](https://github.com/comfyanonymous/ComfyUI) - 图像生成框架
 - [Next.js](https://nextjs.org) - React 框架
 - [FastAPI](https://fastapi.tiangolo.com) - Python Web 框架
-
-## 📞 联系我们
-
-- 项目主页: [GitHub Repository](https://github.com/your-username/faceana-mtq)
-- 问题反馈: [Issues](https://github.com/your-username/faceana-mtq/issues)
-- 文档: [Documentation](docs/)
 
 ---
 
