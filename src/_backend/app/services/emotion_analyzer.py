@@ -36,16 +36,16 @@ class EmotionAnalyzer:
         """分析图像情绪，整合多个API结果"""
         results = []
         errors = []
-        
+
         # 并发调用Face++和AI模型
         tasks = [
             self._call_facepp(image_data),
             self._call_ai_models(image_data)
         ]
-        
+
         # 等待所有任务完成
         completed_results = await asyncio.gather(*tasks, return_exceptions=True)
-        
+
         # 处理结果
         for result in completed_results:
             if isinstance(result, Exception):
@@ -53,7 +53,9 @@ class EmotionAnalyzer:
                 logger.warning(f"API调用失败: {result}")
             elif result is not None:
                 results.append(result)
-        
+                # 添加详细日志
+                logger.info(f"API调用成功 - 来源: {result.source}, 主导情绪: {result.dominant_emotion}, 置信度: {result.confidence:.2f}")
+
         # 如果没有任何成功结果，返回错误
         if not results:
             error_msg = "所有情绪分析API都失败了: " + "; ".join(errors)
@@ -63,18 +65,18 @@ class EmotionAnalyzer:
                 analysis_text="",
                 error_message=error_msg
             )
-        
+
         # 融合结果
         merged_emotions = self._merge_results(results)
         emotion_data_list = create_emotion_data_list(merged_emotions)
         analysis_text = self._generate_analysis_text(results, errors)
-        
+
         return AnalysisResponse(
             success=True,
             emotion_data=emotion_data_list,
             analysis_text=analysis_text,
             error_message=None if not errors else "; ".join(errors)
-        )    
+        )
     async def _call_facepp(self, image_data: bytes) -> Optional[EmotionResult]:
         """调用Face++ API"""
         try:
@@ -145,11 +147,16 @@ class EmotionAnalyzer:
             "MULTI-API ANALYSIS RESULTS:",
         ]
         
-        # 添加各API结果
+        # 添加各API结果 - 增强调试信息
         for result in results:
             source_name = result.source.upper()
             result_dominant = result.dominant_emotion.upper()
             result_confidence = int(result.confidence * 100)
+
+            # 记录详细信息用于调试
+            logger.info(f"分析结果 - 来源: {source_name}, 主导情绪: {result_dominant}, 置信度: {result_confidence}%, 时间戳: {result.timestamp}")
+            logger.info(f"详细情绪分布: {result.emotions}")
+
             analysis_lines.extend([
                 f"• {source_name}: {result_dominant} ({result_confidence}%)"
             ])

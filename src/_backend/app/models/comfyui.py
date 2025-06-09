@@ -32,7 +32,7 @@ class GenerationResponse:
     """图像生成响应"""
     success: bool
     prompt_id: Optional[str] = None
-    images: List[ImageInfo] = None
+    images: Optional[List[ImageInfo]] = None
     error_message: Optional[str] = None
     generation_time: Optional[float] = None  # 生成耗时（秒）
 
@@ -74,9 +74,9 @@ DEFAULT_WORKFLOW = "jimeng.json"
 # ComfyUI配置
 COMFYUI_CONFIG = {
     "base_url": "http://localhost:8188",
-    "timeout": 10,
-    "max_wait_time": 300,  # 最大等待时间（秒）
-    "check_interval": 3,   # 状态检查间隔（秒）
+    "timeout": 15,         # API请求超时时间（秒）
+    "max_wait_time": 600,  # 最大等待时间（秒）- 增加到10分钟
+    "check_interval": 2,   # 状态检查间隔（秒）- 减少到2秒提高响应性
 }
 
 
@@ -99,20 +99,29 @@ def create_filename_prefix(emotion: str) -> str:
 def parse_comfyui_outputs(outputs: Dict[str, Any], base_url: str) -> List[ImageInfo]:
     """解析ComfyUI输出，提取图像信息"""
     images = []
-    
+    seen_filenames = set()  # 用于去重
+
     for node_id, node_output in outputs.items():
         if "images" in node_output:
             for img in node_output["images"]:
+                filename = img["filename"]
+
+                # 避免重复添加相同的图像文件
+                if filename in seen_filenames:
+                    continue
+
+                seen_filenames.add(filename)
+
                 # 使用我们后端的静态文件服务URL
                 backend_url = "http://localhost:8000/comfyui-output"
                 image_info = ImageInfo(
-                    filename=img["filename"],
+                    filename=filename,
                     subfolder=img.get("subfolder", ""),
                     type=img.get("type", "output"),
-                    url=f"{backend_url}/{img['filename']}"
+                    url=f"{backend_url}/{filename}"
                 )
                 images.append(image_info)
-    
+
     return images
 
 

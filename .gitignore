@@ -242,3 +242,8 @@ data/
 **/surprised.json
 **/test.json
 **/jimeng.json
+
+.cursor
+_expriments
+.obsidian
+test

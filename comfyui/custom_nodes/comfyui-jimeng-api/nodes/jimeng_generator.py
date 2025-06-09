@@ -1,13 +1,13 @@
 """
-即梦 API ComfyUI 节点实现
-火山引擎即梦图像生成 API
+即梦图像生成节点
+火山引擎即梦图像生成 API 集成
 """
 
 import requests
 import json
 import base64
 import io
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFont
 import torch
 import numpy as np
 
@@ -75,15 +75,13 @@ class JimengImageGenerator:
     FUNCTION = "generate_image"
     CATEGORY = "即梦 API"
     
-
-    
     def call_jimeng_api(self, prompt, model, size, api_key, watermark=False, seed=-1, guidance_scale=2.5, response_format="b64_json"):
         """调用即梦 API"""
-
-        # API 端点 - 使用正确的图像生成端点
+        
+        # API 端点
         url = "https://ark.cn-beijing.volces.com/api/v3/images/generations"
-
-        # 构建请求体 - 根据文档添加所有支持的参数
+        
+        # 构建请求体
         request_body = {
             "model": model,
             "prompt": prompt,
@@ -93,31 +91,31 @@ class JimengImageGenerator:
             "guidance_scale": guidance_scale,
             "n": 1
         }
-
+        
         # 添加seed参数（如果不是-1）
         if seed != -1:
             request_body["seed"] = seed
-
+        
         body_json = json.dumps(request_body)
-
+        
         # 构建请求头
         headers = {
             "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json",
             "Accept": "application/json"
         }
-
+        
         try:
             # 发送请求
             response = requests.post(url, headers=headers, data=body_json, timeout=60)
-
+            
             if response.status_code == 200:
                 result = response.json()
-
-                # 解析响应 - 根据response_format处理
+                
+                # 解析响应
                 if "data" in result and len(result["data"]) > 0:
                     image_data = result["data"][0]
-
+                    
                     # 根据请求的格式处理响应
                     if response_format == "b64_json" and "b64_json" in image_data:
                         base64_data = image_data["b64_json"]
@@ -146,23 +144,23 @@ class JimengImageGenerator:
                             img_response = requests.get(image_url, timeout=30)
                             if img_response.status_code == 200:
                                 return img_response.content
-
+                
                 raise Exception(f"API 响应中未找到图像数据: {result}")
             else:
                 raise Exception(f"API 请求失败: {response.status_code} - {response.text}")
-
+        
         except Exception as e:
             raise Exception(f"调用即梦 API 失败: {str(e)}")
     
     def generate_image(self, prompt, api_key, model, size, watermark, seed=-1, guidance_scale=2.5, response_format="b64_json"):
         """生成图像"""
-
+        
         if not api_key:
             raise Exception("请提供有效的 API Key")
-
+        
         # 解析尺寸用于错误处理
         width, height = map(int, size.split('x'))
-
+        
         try:
             # 调用 API
             image_data = self.call_jimeng_api(
@@ -192,45 +190,31 @@ class JimengImageGenerator:
         except Exception as e:
             error_msg = str(e)
             print(f"即梦图像生成错误: {error_msg}")
-
+            
             # 创建错误信息图像
-            from PIL import ImageDraw, ImageFont
-
-            # 创建错误图像
             error_image = Image.new('RGB', (width, height), (50, 50, 50))
             draw = ImageDraw.Draw(error_image)
-
+            
             # 添加错误文本
             try:
-                # 尝试使用默认字体
                 font = ImageFont.load_default()
             except:
                 font = None
-
+            
             error_text = f"即梦 API 错误:\n{error_msg[:100]}..."
-
+            
             # 计算文本位置
             text_bbox = draw.textbbox((0, 0), error_text, font=font)
             text_width = text_bbox[2] - text_bbox[0]
             text_height = text_bbox[3] - text_bbox[1]
-
+            
             x = (width - text_width) // 2
             y = (height - text_height) // 2
-
+            
             # 绘制文本
             draw.text((x, y), error_text, fill=(255, 255, 255), font=font)
-
+            
             # 转换为 tensor
             image_np = np.array(error_image).astype(np.float32) / 255.0
             image_tensor = torch.from_numpy(image_np)[None,]
             return (image_tensor,)
-
-
-# 节点映射
-NODE_CLASS_MAPPINGS = {
-    "JimengImageGenerator": JimengImageGenerator
-}
-
-NODE_DISPLAY_NAME_MAPPINGS = {
-    "JimengImageGenerator": "即梦图像生成"
-}

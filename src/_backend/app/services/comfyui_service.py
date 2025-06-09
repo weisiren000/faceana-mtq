@@ -164,26 +164,29 @@ class ComfyUIService:
         async with aiohttp.ClientSession() as session:
             while time.time() - start_time < self.max_wait_time:
                 try:
-                    # 首先检查完整历史记录
-                    async with session.get(f"{self.base_url}/history") as response:
+                    # 首先检查特定ID的历史记录（更高效和准确）
+                    async with session.get(f"{self.base_url}/history/{prompt_id}") as response:
                         if response.status == 200:
-                            all_history = await response.json()
-                            if prompt_id in all_history:
-                                result = all_history[prompt_id]
+                            history_data = await response.json()
+                            if prompt_id in history_data:
+                                result = history_data[prompt_id]
+                                logger.info(f"找到历史记录: {list(result.keys())}")
+
+                                # 检查是否有outputs（最可靠的完成标志）
+                                if "outputs" in result:
+                                    logger.info(f"图像生成完成（通过outputs检测）！提示ID: {prompt_id}")
+                                    return result["outputs"]
+
                                 # 检查状态
                                 if "status" in result:
                                     status = result["status"]
-                                    if status.get("completed", False) and status.get("status_str") == "success":
-                                        logger.info(f"图像生成完成！提示ID: {prompt_id}")
+                                    logger.info(f"任务状态: {status}")
+                                    if status.get("completed", False):
+                                        logger.info(f"图像生成完成（通过状态检测）！提示ID: {prompt_id}")
                                         return result.get("outputs", {})
                                     elif status.get("status_str") == "error":
                                         logger.error(f"图像生成失败: {status}")
                                         return None
-
-                                # 如果有outputs，也认为是成功的
-                                if "outputs" in result:
-                                    logger.info(f"图像生成完成（通过outputs检测）！提示ID: {prompt_id}")
-                                    return result["outputs"]
 
                     # 检查队列状态，看是否还在处理中
                     async with session.get(f"{self.base_url}/queue") as response:
@@ -192,21 +195,25 @@ class ComfyUIService:
                             running = queue_data.get("queue_running", [])
                             pending = queue_data.get("queue_pending", [])
 
+                            logger.info(f"队列状态: 运行中={len(running)}, 等待中={len(pending)}")
+
                             # 检查是否还在队列中
                             in_queue = False
                             for item in running + pending:
-                                if len(item) >= 2 and isinstance(item[1], str):
-                                    if item[1] == prompt_id:
+                                if len(item) >= 2:
+                                    # 检查不同的队列项格式
+                                    if isinstance(item[1], str) and item[1] == prompt_id:
                                         in_queue = True
                                         break
-                                elif len(item) >= 2 and isinstance(item[1], dict):
-                                    # 有些格式可能不同，也检查一下
-                                    if str(item[1]).find(prompt_id) != -1:
-                                        in_queue = True
-                                        break
+                                    elif isinstance(item[1], dict):
+                                        # 检查字典中的prompt_id
+                                        if item[1].get("prompt", [None])[0] == prompt_id:
+                                            in_queue = True
+                                            break
 
                             if not in_queue:
-                                # 不在队列中，最后再检查一次历史记录
+                                logger.info(f"任务不在队列中，进行最终检查: {prompt_id}")
+                                # 不在队列中，最后再检查一次完整历史记录
                                 async with session.get(f"{self.base_url}/history") as hist_response:
                                     if hist_response.status == 200:
                                         final_history = await hist_response.json()
@@ -215,8 +222,11 @@ class ComfyUIService:
                                             logger.info(f"在最终检查中找到结果: {prompt_id}")
                                             return result.get("outputs", {})
                                         else:
-                                            logger.warning(f"任务不在队列中，但历史记录中也找不到: {prompt_id}")
-                                            return None
+                                            logger.warning(f"任务不在队列中，历史记录中也找不到: {prompt_id}")
+                                            # 不立即返回None，继续等待一段时间
+                                            logger.info("继续等待，可能任务还在处理中...")
+                            else:
+                                logger.info(f"任务仍在队列中: {prompt_id}")
 
                     # 等待一段时间后重试
                     await asyncio.sleep(self.check_interval)
@@ -269,11 +279,31 @@ class ComfyUIService:
             # 5. 等待完成
             outputs = await self.wait_for_completion(prompt_id)
             if not outputs:
-                return GenerationResponse(
-                    success=False,
-                    prompt_id=prompt_id,
-                    error_message="图像生成超时或失败"
-                )
+                # 在报告失败前，再次检查是否有图像生成
+                logger.warning(f"等待完成返回空结果，进行最终检查: {prompt_id}")
+                try:
+                    async with aiohttp.ClientSession() as session:
+                        async with session.get(f"{self.base_url}/history") as response:
+                            if response.status == 200:
+                                all_history = await response.json()
+                                if prompt_id in all_history:
+                                    result = all_history[prompt_id]
+                                    if "outputs" in result:
+                                        logger.info(f"最终检查发现图像已生成: {prompt_id}")
+                                        outputs = result["outputs"]
+                                    else:
+                                        logger.error(f"最终检查：任务存在但无输出: {result.keys()}")
+                                else:
+                                    logger.error(f"最终检查：历史记录中找不到任务: {prompt_id}")
+                except Exception as e:
+                    logger.error(f"最终检查时出错: {e}")
+
+                if not outputs:
+                    return GenerationResponse(
+                        success=False,
+                        prompt_id=prompt_id,
+                        error_message="图像生成超时或失败"
+                    )
 
             # 6. 解析结果
             images = parse_comfyui_outputs(outputs, self.base_url)

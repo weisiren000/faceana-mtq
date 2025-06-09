@@ -103,7 +103,7 @@ class GeminiService:
         """将图像编码为base64"""
         return base64.b64encode(image_data).decode("utf-8")
     
-    async def analyze_emotion(self, image_data: bytes, model: str = None) -> EmotionResult:
+    async def analyze_emotion(self, image_data: bytes, model: Optional[str] = None) -> EmotionResult:
         """使用Gemini分析情绪"""
         if model is None:
             model = self.models[0]
@@ -274,32 +274,60 @@ class GeminiService:
     def parse_ai_response(self, text_response: str) -> Dict[str, float]:
         """解析AI模型的文本响应"""
         try:
-            # 尝试直接解析JSON
+            logger.info(f"解析AI响应: {text_response[:200]}...")
+
+            # 方法1: 尝试直接解析JSON
             if text_response.strip().startswith("{"):
                 data = json.loads(text_response.strip())
                 emotions = data.get("emotions", {})
+                logger.info(f"直接JSON解析成功: {emotions}")
                 return normalize_probabilities(emotions)
-            
-            # 如果不是JSON，尝试提取情绪关键词
+
+            # 方法2: 提取```json```代码块
+            import re
+            json_match = re.search(r'```json\s*\n(.*?)\n```', text_response, re.DOTALL)
+            if json_match:
+                json_str = json_match.group(1).strip()
+                logger.info(f"从代码块提取JSON: {json_str}")
+                data = json.loads(json_str)
+                emotions = data.get("emotions", {})
+                logger.info(f"代码块JSON解析成功: {emotions}")
+                return normalize_probabilities(emotions)
+
+            # 方法3: 提取```代码块（无json标识）
+            code_match = re.search(r'```\s*\n(.*?)\n```', text_response, re.DOTALL)
+            if code_match:
+                json_str = code_match.group(1).strip()
+                if json_str.startswith("{"):
+                    logger.info(f"从通用代码块提取JSON: {json_str}")
+                    data = json.loads(json_str)
+                    emotions = data.get("emotions", {})
+                    logger.info(f"通用代码块JSON解析成功: {emotions}")
+                    return normalize_probabilities(emotions)
+
+            # 方法4: 如果不是JSON，尝试提取情绪关键词
+            logger.warning(f"无法解析为JSON，尝试关键词提取: {text_response}")
             text_lower = text_response.lower()
             detected_emotions = {}
-            
+
             for keyword, emotion in AI_EMOTION_MAPPING.items():
                 if keyword in text_lower:
                     detected_emotions[emotion] = detected_emotions.get(emotion, 0) + 1
-            
+
             if detected_emotions:
                 # 转换为概率
                 total = sum(detected_emotions.values())
                 for emotion in detected_emotions:
                     detected_emotions[emotion] = detected_emotions[emotion] / total
+                logger.info(f"关键词提取成功: {detected_emotions}")
                 return normalize_probabilities(detected_emotions)
-            
+
             # 默认返回中性情绪
+            logger.warning("所有解析方法都失败，返回默认中性情绪")
             return {"neutral": 1.0}
-            
+
         except Exception as e:
-            logger.error(f"解析AI响应失败: {e}")
+            logger.error(f"解析AI响应失败: {e}, 原始响应: {text_response}")
             return {"neutral": 1.0}
 class OpenRouterService:
     """OpenRouter API服务类"""
@@ -321,7 +349,7 @@ class OpenRouterService:
         """将图像编码为base64"""
         return base64.b64encode(image_data).decode("utf-8")
     
-    async def analyze_emotion(self, image_data: bytes, model: str = None) -> EmotionResult:
+    async def analyze_emotion(self, image_data: bytes, model: Optional[str] = None) -> EmotionResult:
         """使用OpenRouter分析情绪"""
         if model is None:
             model = self.models[0]
@@ -351,7 +379,9 @@ class OpenRouterService:
             )
             
             text_response = completion.choices[0].message.content
-            
+            if not text_response:
+                raise Exception("OpenRouter返回空响应")
+
             # 解析响应
             emotions = self.parse_ai_response(text_response)
             dominant_emotion = get_dominant_emotion(emotions)
@@ -372,30 +402,58 @@ class OpenRouterService:
     def parse_ai_response(self, text_response: str) -> Dict[str, float]:
         """解析AI模型的文本响应（与GeminiService共用）"""
         try:
-            # 尝试直接解析JSON
+            logger.info(f"解析AI响应: {text_response[:200]}...")
+
+            # 方法1: 尝试直接解析JSON
             if text_response.strip().startswith("{"):
                 data = json.loads(text_response.strip())
                 emotions = data.get("emotions", {})
+                logger.info(f"直接JSON解析成功: {emotions}")
                 return normalize_probabilities(emotions)
-            
-            # 如果不是JSON，尝试提取情绪关键词
+
+            # 方法2: 提取```json```代码块
+            import re
+            json_match = re.search(r'```json\s*\n(.*?)\n```', text_response, re.DOTALL)
+            if json_match:
+                json_str = json_match.group(1).strip()
+                logger.info(f"从代码块提取JSON: {json_str}")
+                data = json.loads(json_str)
+                emotions = data.get("emotions", {})
+                logger.info(f"代码块JSON解析成功: {emotions}")
+                return normalize_probabilities(emotions)
+
+            # 方法3: 提取```代码块（无json标识）
+            code_match = re.search(r'```\s*\n(.*?)\n```', text_response, re.DOTALL)
+            if code_match:
+                json_str = code_match.group(1).strip()
+                if json_str.startswith("{"):
+                    logger.info(f"从通用代码块提取JSON: {json_str}")
+                    data = json.loads(json_str)
+                    emotions = data.get("emotions", {})
+                    logger.info(f"通用代码块JSON解析成功: {emotions}")
+                    return normalize_probabilities(emotions)
+
+            # 方法4: 如果不是JSON，尝试提取情绪关键词
+            logger.warning(f"无法解析为JSON，尝试关键词提取: {text_response}")
             text_lower = text_response.lower()
             detected_emotions = {}
-            
+
             for keyword, emotion in AI_EMOTION_MAPPING.items():
                 if keyword in text_lower:
                     detected_emotions[emotion] = detected_emotions.get(emotion, 0) + 1
-            
+
             if detected_emotions:
                 # 转换为概率
                 total = sum(detected_emotions.values())
                 for emotion in detected_emotions:
                     detected_emotions[emotion] = detected_emotions[emotion] / total
+                logger.info(f"关键词提取成功: {detected_emotions}")
                 return normalize_probabilities(detected_emotions)
-            
+
             # 默认返回中性情绪
+            logger.warning("所有解析方法都失败，返回默认中性情绪")
             return {"neutral": 1.0}
-            
+
         except Exception as e:
-            logger.error(f"解析AI响应失败: {e}")
+            logger.error(f"解析AI响应失败: {e}, 原始响应: {text_response}")
             return {"neutral": 1.0}

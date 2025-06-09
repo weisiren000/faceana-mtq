@@ -1,6 +1,8 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
+import { useTheme } from "@/hooks/useTheme"
+import { ThemeToggle } from "@/components/ThemeToggle"
 
 interface EmotionData {
   emotion: string
@@ -95,6 +97,7 @@ function useTypewriter(text: string, baseSpeed: number = 50) {
 }
 
 export default function EmoscanApp() {
+  const { isDark, mounted } = useTheme()
   const [isRecording, setIsRecording] = useState(false)
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [analysisProgress, setAnalysisProgress] = useState(0)
@@ -110,7 +113,7 @@ export default function EmoscanApp() {
   ])
   const [llmOutput, setLlmOutput] = useState("")
   const [scanLine, setScanLine] = useState(0)
-  const [currentTime, setCurrentTime] = useState("")
+  const [currentTime, setCurrentTime] = useState("--:--:--") // 防止Hydration不匹配
   const [analysisMode, setAnalysisMode] = useState<AnalysisMode>(AnalysisMode.QUICK)
 
   // 使用打字机效果
@@ -120,6 +123,10 @@ export default function EmoscanApp() {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const streamRef = useRef<MediaStream | null>(null)
   const outputRef = useRef<HTMLDivElement>(null)
+
+  // 防止重复API调用的锁定机制
+  const apiCallLockRef = useRef<boolean>(false)
+  const currentCallIdRef = useRef<string | null>(null)
 
   // 自动滚动逻辑
   useEffect(() => {
@@ -171,8 +178,11 @@ export default function EmoscanApp() {
     return () => clearInterval(interval)
   }, [])
 
-  // 时间更新
+  // 时间更新 - 防止Hydration不匹配
   useEffect(() => {
+    // 只在客户端挂载后才开始更新时间
+    if (!mounted) return
+
     const updateTime = () => {
       setCurrentTime(new Date().toLocaleTimeString())
     }
@@ -183,7 +193,7 @@ export default function EmoscanApp() {
     // 每秒更新
     const interval = setInterval(updateTime, 1000)
     return () => clearInterval(interval)
-  }, [])
+  }, [mounted])
 
   // 隐藏滚动条和添加文字大小渐变效果 + 无限循环滚动
   useEffect(() => {
@@ -290,12 +300,25 @@ export default function EmoscanApp() {
             line.style.width = `${width}%`
             line.style.margin = '0 auto'
             line.style.transform = `translateZ(${translateZ}px) rotateX(${rotateX}deg)`
-            line.style.color = `rgba(0, 255, 136, ${opacity})`
-            line.style.textShadow = `
-              0 0 ${12 * opacity}px rgba(0,255,136,${opacity * 0.5}),
-              0 ${1.5 * opacity}px ${6 * opacity}px rgba(0,0,0,0.3),
-              0 0 ${25 * opacity}px rgba(0,255,136,${opacity * 0.25})
-            `
+
+            // 使用CSS变量获取当前主题的文本颜色
+            const rootStyles = window.getComputedStyle(document.documentElement)
+            const textColorHsl = rootStyles.getPropertyValue('--emoscan-text').trim()
+            const accentColorHsl = rootStyles.getPropertyValue('--emoscan-accent').trim()
+
+            // 将HSL转换为RGB以便设置透明度
+            const isDarkTheme = document.documentElement.classList.contains('dark')
+            if (isDarkTheme) {
+              // 深色主题：使用绿色系
+              line.style.color = `hsla(${accentColorHsl}, ${opacity})`
+              line.style.textShadow = `0 0 ${12 * opacity}px hsla(${accentColorHsl}, ${opacity * 0.5}),
+                 0 ${1.5 * opacity}px ${6 * opacity}px rgba(0,0,0,0.3),
+                 0 0 ${25 * opacity}px hsla(${accentColorHsl}, ${opacity * 0.25})`
+            } else {
+              // 浅色主题：使用深色文字
+              line.style.color = `hsla(${textColorHsl}, ${opacity})`
+              line.style.textShadow = `0 ${1 * opacity}px ${3 * opacity}px rgba(0,0,0,0.2)`
+            }
           })
         })
       }
@@ -432,6 +455,7 @@ export default function EmoscanApp() {
   }
 
   const startAnalysis = async (images: CapturedImage[]) => {
+    const callId = Math.random().toString(36).substr(2, 9);
     setIsRecording(false)
     setIsAnalyzing(true)
     stopCamera()
@@ -440,6 +464,7 @@ export default function EmoscanApp() {
     if (analysisMode === AnalysisMode.DETAILED) {
       // 详细模式：分析所有图像
       await analyzeBatchImages(images)
+      return // 详细模式完成后直接返回
     } else {
       // 快速模式：只分析最后一张图像
       if (images.length > 0) {
@@ -452,7 +477,7 @@ export default function EmoscanApp() {
             const blob = await response.blob()
 
             // 调用后端API
-            await analyzeImageWithAPI(blob)
+            await analyzeImageWithAPI(blob, callId)
             setIsAnalyzing(false)
 
             // 更新图像状态
@@ -465,15 +490,17 @@ export default function EmoscanApp() {
               )
             })
 
-            return
+            return // 快速模式API调用成功后直接返回
           } catch (error) {
-            console.error('图像转换失败:', error)
+            console.error('快速模式图像转换失败:', error)
+            // 快速模式失败，继续执行fallback逻辑
           }
         }
       }
     }
 
-    // 如果API调用失败，使用模拟数据
+    // 只有在快速模式失败时才执行fallback逻辑
+    console.log('执行fallback逻辑，使用模拟数据')
     let progress = 0
     const progressInterval = setInterval(() => {
       progress += Math.random() * 15
@@ -481,6 +508,7 @@ export default function EmoscanApp() {
         progress = 100
         clearInterval(progressInterval)
         completeAnalysisWithMockData()
+        setIsAnalyzing(false)
       }
       setAnalysisProgress(progress)
     }, 200)
@@ -663,7 +691,19 @@ export default function EmoscanApp() {
   };
 
   // 调用后端API进行情绪分析和图像生成
-  const analyzeImageWithAPI = async (imageBlob: Blob) => {
+  const analyzeImageWithAPI = async (imageBlob: Blob, callId?: string) => {
+    const id = callId || Math.random().toString(36).substr(2, 9);
+
+    // 防止重复调用
+    if (apiCallLockRef.current) {
+      console.warn(`API调用被阻止，已有调用正在进行中: ${currentCallIdRef.current}`);
+      return;
+    }
+
+    // 设置锁定
+    apiCallLockRef.current = true;
+    currentCallIdRef.current = id;
+
     try {
       // 首先检查API是否可用
       const apiAvailable = await checkApiAvailability();
@@ -759,6 +799,10 @@ export default function EmoscanApp() {
 
       // 使用模拟数据
       completeAnalysisWithMockData()
+    } finally {
+      // 释放锁定
+      apiCallLockRef.current = false;
+      currentCallIdRef.current = null;
     }
   }
 
@@ -816,29 +860,31 @@ export default function EmoscanApp() {
   }
 
   return (
-    <div className="min-h-screen bg-black text-green-400 font-mono overflow-hidden relative">
+    <div className="min-h-screen font-mono overflow-hidden relative transition-colors duration-300 bg-[hsl(var(--emoscan-bg))] text-[hsl(var(--emoscan-text))]">
       {/* 背景网格 */}
       <div className="absolute inset-0 opacity-10">
         <div className="grid grid-cols-20 grid-rows-20 h-full w-full">
           {Array.from({ length: 400 }).map((_, i) => (
-            <div key={i} className="border border-green-400/20" />
+            <div key={i} className="border border-[hsl(var(--emoscan-grid)/0.2)]" />
           ))}
         </div>
       </div>
 
       {/* 顶部导航栏 */}
-      <header className="relative z-10 border-b border-green-400/30 bg-black/80 backdrop-blur-sm">
+      <header className="relative z-10 border-b backdrop-blur-sm transition-colors duration-300 border-[hsl(var(--emoscan-border)/0.3)] bg-[hsl(var(--emoscan-bg)/0.8)]">
         <div className="flex items-center justify-between px-6 py-4">
           <div className="flex items-center space-x-4">
-            <div className="text-2xl font-bold text-cyan-400 animate-pulse">EMOSCAN</div>
-            <div className="text-sm text-green-400/70">Neural Emotion Analysis System</div>
+            <div className="text-2xl font-bold animate-pulse text-[hsl(var(--emoscan-accent))]">EMOSCAN</div>
+            <div className="text-sm text-[hsl(var(--emoscan-text)/0.7)]">Neural Emotion Analysis System</div>
           </div>
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+              <div className="w-2 h-2 rounded-full animate-pulse bg-[hsl(var(--emoscan-accent))]" />
               <span className="text-xs">SYSTEM ONLINE</span>
             </div>
-            <div className="text-xs text-green-400/70">{currentTime}</div>
+            <div className="text-xs text-[hsl(var(--emoscan-text)/0.7)]">{currentTime}</div>
+            {/* 主题切换按钮 */}
+            <ThemeToggle />
           </div>
         </div>
       </header>
@@ -846,12 +892,12 @@ export default function EmoscanApp() {
       {/* 主要内容区域 */}
       <div className="flex h-[calc(100vh-80px)] relative z-10">
         {/* 左侧面板 - 摄像头区域 */}
-        <div className="w-1/3 border-r border-green-400/30 bg-black/50 backdrop-blur-sm p-6">
+        <div className="w-1/3 border-r backdrop-blur-sm p-6 transition-colors duration-300 border-[hsl(var(--emoscan-border)/0.3)] bg-[hsl(var(--emoscan-panel)/0.5)]">
           <div className="h-full flex flex-col">
-            <h2 className="text-lg font-semibold mb-4 text-cyan-400">VISUAL INPUT</h2>
+            <h2 className="text-lg font-semibold mb-4 text-[hsl(var(--emoscan-accent))]">VISUAL INPUT</h2>
 
             {/* 摄像头显示区域 */}
-            <div className="flex-1 relative border border-green-400/50 rounded-lg overflow-hidden bg-black/80">
+            <div className="flex-1 relative border rounded-lg overflow-hidden transition-colors duration-300 border-[hsl(var(--emoscan-border)/0.5)] bg-[hsl(var(--emoscan-bg)/0.8)]">
               <video
                 ref={videoRef}
                 autoPlay
@@ -864,7 +910,7 @@ export default function EmoscanApp() {
               {/* 扫描线效果 */}
               {isRecording && (
                 <div
-                  className="absolute left-0 w-full h-0.5 bg-cyan-400 shadow-lg shadow-cyan-400/50"
+                  className="absolute left-0 w-full h-0.5 shadow-lg bg-[hsl(var(--emoscan-accent))] shadow-[hsl(var(--emoscan-accent)/0.5)]"
                   style={{
                     top: `${scanLine}%`,
                     transition: "top 0.05s linear",
@@ -922,129 +968,13 @@ export default function EmoscanApp() {
                 {isRecording ? "CAPTURING..." : `START SCAN (${analysisMode.toUpperCase()})`}
               </button>
 
-              {/* 测试按钮 */}
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  onClick={() => {
-                    const testText = ">>> TESTING TYPEWRITER EFFECT <<<\n\nThis is a test of the typewriter effect.\nEach character should appear one by one,\nwith natural pauses at punctuation marks.\n\nThe cursor should blink at the end!"
-                    setLlmOutput(testText)
-                  }}
-                  className="py-2 px-3 bg-cyan-600/20 border border-cyan-400/50 rounded-lg text-cyan-400 hover:bg-cyan-600/30 transition-all duration-200 text-xs"
-                >
-                  TEST TYPEWRITER
-                </button>
-                <button
-                  onClick={() => setLlmOutput("")}
-                  className="py-2 px-3 bg-red-600/20 border border-red-400/50 rounded-lg text-red-400 hover:bg-red-600/30 transition-all duration-200 text-xs"
-                >
-                  CLEAR OUTPUT
-                </button>
-              </div>
 
-              {/* 滚动测试按钮 */}
-              <button
-                onClick={() => {
-                  const longTestText = Array.from({ length: 50 }, (_, i) =>
-                    `Line ${i + 1}: This is a long test line to check scrolling functionality. Lorem ipsum dolor sit amet, consectetur adipiscing elit.`
-                  ).join('\n')
-                  setLlmOutput(`>>> SCROLL TEST <<<\n\n${longTestText}\n\n>>> END OF SCROLL TEST <<<`)
-                }}
-                className="w-full py-2 px-3 bg-yellow-600/20 border border-yellow-400/50 rounded-lg text-yellow-400 hover:bg-yellow-600/30 transition-all duration-200 text-xs"
-              >
-                TEST SCROLL
-              </button>
 
-              {/* ComfyUI图像生成测试按钮 */}
-              <button
-                onClick={async () => {
-                  setLlmOutput(">>> COMFYUI图像生成测试 <<<\n\n正在连接ComfyUI服务...")
 
-                  try {
-                    // 获取当前主导情绪
-                    const dominantEmotion = emotionData.length > 0
-                      ? emotionData.reduce((prev, current) =>
-                          prev.percentage > current.percentage ? prev : current
-                        )
-                      : { emotion: "happy", percentage: 75.5 }
 
-                    setLlmOutput(`>>> COMFYUI图像生成测试 <<<\n\n主导情绪: ${dominantEmotion.emotion} (${dominantEmotion.percentage.toFixed(1)}%)\n正在生成图像...`)
 
-                    // 调用图像生成API
-                    const response = await fetch('http://localhost:8000/api/v1/generation/generate', {
-                      method: 'POST',
-                      headers: {
-                        'Content-Type': 'application/json',
-                      },
-                      body: JSON.stringify({
-                        emotion: dominantEmotion.emotion.toLowerCase(),
-                        seed: Math.floor(Math.random() * 1000000)
-                      }),
-                    })
 
-                    if (response.ok) {
-                      const result = await response.json()
 
-                      let resultText = `>>> COMFYUI图像生成测试 <<<\n\n`
-                      resultText += `主导情绪: ${dominantEmotion.emotion} (${dominantEmotion.percentage.toFixed(1)}%)\n\n`
-
-                      if (result.success) {
-                        resultText += `✅ 图像生成成功!\n`
-                        resultText += `🎨 生成时间: ${result.generation_time?.toFixed(2)}秒\n`
-                        resultText += `📸 生成图像: ${result.images?.length || 0}张\n`
-                        resultText += `🆔 提示ID: ${result.prompt_id}\n\n`
-
-                        if (result.images && result.images.length > 0) {
-                          resultText += `生成的图像:\n`
-                          result.images.forEach((img: any, index: number) => {
-                            resultText += `${index + 1}. ${img.filename}\n`
-                            resultText += `   📁 子目录: ${img.subfolder || '无'}\n`
-                            resultText += `   🔗 URL: ${img.url}\n\n`
-                          })
-
-                          resultText += `💡 提示: 你可以在ComfyUI输出目录或通过上述URL查看生成的图像`
-                        }
-                      } else {
-                        resultText += `❌ 图像生成失败!\n`
-                        resultText += `错误信息: ${result.error_message}\n\n`
-                        resultText += `💡 请检查:\n`
-                        resultText += `1. ComfyUI是否在端口8188运行\n`
-                        resultText += `2. 工作流文件是否存在\n`
-                        resultText += `3. 后端服务日志中的详细错误信息`
-                      }
-
-                      setLlmOutput(resultText)
-                    } else {
-                      setLlmOutput(`>>> COMFYUI图像生成测试 <<<\n\n❌ API调用失败: ${response.status}\n\n请检查后端服务是否正常运行。`)
-                    }
-                  } catch (error) {
-                    setLlmOutput(`>>> COMFYUI图像生成测试 <<<\n\n❌ 连接异常: ${error}\n\n请检查网络连接和后端服务状态。`)
-                  }
-                }}
-                className="w-full py-2 px-3 bg-purple-600/20 border border-purple-400/50 rounded-lg text-purple-400 hover:bg-purple-600/30 transition-all duration-200 text-xs"
-              >
-                🎨 TEST COMFYUI GENERATION
-              </button>
-
-              {/* API测试按钮 */}
-              <button
-                onClick={async () => {
-                  setLlmOutput(">>> 测试后端API连接 <<<\n\n正在连接到后端服务器...")
-                  try {
-                    const response = await fetch('http://localhost:8000/health')
-                    if (response.ok) {
-                      const data = await response.json()
-                      setLlmOutput(`>>> API连接成功 <<<\n\n服务状态: ${data.status}\n服务名称: ${data.service}\n版本: ${data.version}\n\n后端API已就绪，可以进行情绪分析！`)
-                    } else {
-                      setLlmOutput(`>>> API连接失败 <<<\n\n状态码: ${response.status}\n\n请确保后端服务器正在运行。`)
-                    }
-                  } catch (error) {
-                    setLlmOutput(`>>> API连接异常 <<<\n\n错误信息: ${error}\n\n请检查:\n1. 后端服务器是否启动\n2. 端口8000是否可用\n3. 网络连接是否正常`)
-                  }
-                }}
-                className="w-full py-2 px-3 bg-purple-600/20 border border-purple-400/50 rounded-lg text-purple-400 hover:bg-purple-600/30 transition-all duration-200 text-xs"
-              >
-                TEST API CONNECTION
-              </button>
 
               {/* 捕获的图像预览 */}
               {capturedImages.length > 0 && (
@@ -1066,9 +996,9 @@ export default function EmoscanApp() {
         </div>
 
         {/* 中间面板 - 情感分析 */}
-        <div className="w-1/3 border-r border-green-400/30 bg-black/50 backdrop-blur-sm p-6">
+        <div className="w-1/3 border-r backdrop-blur-sm p-6 transition-colors duration-300 border-[hsl(var(--emoscan-border)/0.3)] bg-[hsl(var(--emoscan-panel)/0.5)]">
           <div className="h-full flex flex-col">
-            <h2 className="text-lg font-semibold mb-4 text-cyan-400">EMOTION ANALYSIS</h2>
+            <h2 className="text-lg font-semibold mb-4 text-[hsl(var(--emoscan-accent))]">EMOTION ANALYSIS</h2>
 
             {/* 分析进度 */}
             {isAnalyzing && (
@@ -1077,9 +1007,9 @@ export default function EmoscanApp() {
                   <span>Processing...</span>
                   <span>{Math.floor(analysisProgress)}%</span>
                 </div>
-                <div className="w-full bg-gray-800 rounded-full h-2">
+                <div className="w-full rounded-full h-2 bg-[hsl(var(--muted))]">
                   <div
-                    className="bg-gradient-to-r from-cyan-400 to-green-400 h-2 rounded-full transition-all duration-200"
+                    className="h-2 rounded-full transition-all duration-200 bg-gradient-to-r from-[hsl(var(--emoscan-accent))] to-[hsl(var(--emoscan-accent))]"
                     style={{ width: `${analysisProgress}%` }}
                   />
                 </div>
@@ -1096,7 +1026,7 @@ export default function EmoscanApp() {
                       {emotion.percentage.toFixed(1)}%
                     </span>
                   </div>
-                  <div className="w-full bg-gray-800 rounded-full h-3 overflow-hidden">
+                  <div className="w-full rounded-full h-3 overflow-hidden bg-[hsl(var(--muted))]">
                     <div
                       className="h-3 rounded-full transition-all duration-1000 ease-out"
                       style={{
@@ -1111,7 +1041,7 @@ export default function EmoscanApp() {
             </div>
 
             {/* 情感雷达图 */}
-            <div className="mt-6 h-48 border border-green-400/30 rounded-lg bg-black/80 flex items-center justify-center">
+            <div className="mt-6 h-48 border rounded-lg flex items-center justify-center transition-colors duration-300 border-[hsl(var(--emoscan-border)/0.3)] bg-[hsl(var(--emoscan-bg)/0.8)]">
               <div className="relative w-32 h-32">
                 {/* 雷达图背景 */}
                 <svg className="w-full h-full" viewBox="0 0 100 100">
@@ -1123,7 +1053,7 @@ export default function EmoscanApp() {
                       cy="50"
                       r={r / 2}
                       fill="none"
-                      stroke="rgb(34 197 94 / 0.3)"
+                      stroke={isDark ? "hsl(142 76% 36% / 0.3)" : "hsl(220 13% 69% / 0.3)"}
                       strokeWidth="0.5"
                     />
                   ))}
@@ -1133,7 +1063,7 @@ export default function EmoscanApp() {
                     const x = 50 + 40 * Math.cos(angle)
                     const y = 50 + 40 * Math.sin(angle)
                     return (
-                      <line key={i} x1="50" y1="50" x2={x} y2={y} stroke="rgb(34 197 94 / 0.3)" strokeWidth="0.5" />
+                      <line key={i} x1="50" y1="50" x2={x} y2={y} stroke={isDark ? "hsl(142 76% 36% / 0.3)" : "hsl(220 13% 69% / 0.3)"} strokeWidth="0.5" />
                     )
                   })}
                   {/* 数据多边形 */}
@@ -1147,8 +1077,8 @@ export default function EmoscanApp() {
                         return `${x},${y}`
                       })
                       .join(" ")}
-                    fill="rgb(34 197 94 / 0.2)"
-                    stroke="rgb(34 197 94)"
+                    fill={isDark ? "hsl(142 76% 36% / 0.2)" : "hsl(217 91% 60% / 0.2)"}
+                    stroke={isDark ? "hsl(142 76% 36%)" : "hsl(217 91% 60%)"}
                     strokeWidth="1"
                   />
                 </svg>
@@ -1158,35 +1088,35 @@ export default function EmoscanApp() {
         </div>
 
         {/* 右侧面板 - LLM输出 */}
-        <div className="w-1/3 bg-black/50 backdrop-blur-sm p-6">
+        <div className="w-1/3 backdrop-blur-sm p-6 transition-colors duration-300 bg-[hsl(var(--emoscan-panel)/0.5)]">
           <div className="h-full flex flex-col">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-semibold text-cyan-400">AI ANALYSIS OUTPUT</h2>
+              <h2 className="text-lg font-semibold text-[hsl(var(--emoscan-accent))]">AI ANALYSIS OUTPUT</h2>
             </div>
 
             {/* LLM输出显示 */}
               <div
                 ref={outputRef}
-                className="flex-1 border border-green-400/30 rounded-lg bg-black/80 overflow-y-auto overflow-x-hidden ai-output-container relative"
+                className="flex-1 border rounded-lg overflow-y-auto overflow-x-hidden ai-output-container relative transition-colors duration-300 border-[hsl(var(--emoscan-border)/0.3)] bg-[hsl(var(--emoscan-bg)/0.8)]"
                 style={{
                   scrollbarWidth: 'none',
                   msOverflowStyle: 'none',
                 } as React.CSSProperties}
               >
-                {/* 边缘渐变遮罩层 - 调整为更温和的渐变，确保内容可见 */}
+                {/* 边缘渐变遮罩层 - 使用CSS变量自动适配主题 */}
                 <div
                   className="absolute inset-0 pointer-events-none z-10"
                   style={{
                     background: `linear-gradient(
                       to bottom,
-                      rgba(0,0,0,0.6) 0%,
-                      rgba(0,0,0,0.3) 8%,
-                      rgba(0,0,0,0.1) 20%,
+                      rgba(var(--emoscan-gradient-color), 0.6) 0%,
+                      rgba(var(--emoscan-gradient-color), 0.3) 8%,
+                      rgba(var(--emoscan-gradient-color), 0.1) 20%,
                       transparent 30%,
                       transparent 70%,
-                      rgba(0,0,0,0.1) 80%,
-                      rgba(0,0,0,0.3) 92%,
-                      rgba(0,0,0,0.6) 100%
+                      rgba(var(--emoscan-gradient-color), 0.1) 80%,
+                      rgba(var(--emoscan-gradient-color), 0.3) 92%,
+                      rgba(var(--emoscan-gradient-color), 0.6) 100%
                     )`,
                     borderRadius: 'inherit',
                   }}
@@ -1225,7 +1155,7 @@ export default function EmoscanApp() {
                   {/* 光标 */}
                   {(isTyping || (showCursor && displayText)) && (
                     <span
-                      className={`inline-block w-1 h-4 ml-1 bg-green-400 ${
+                      className={`inline-block w-1 h-4 ml-1 bg-[hsl(var(--emoscan-text))] ${
                         showCursor ? 'opacity-100' : 'opacity-0'
                       } transition-opacity duration-300`}
                       style={{
