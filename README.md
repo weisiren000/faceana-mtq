@@ -76,7 +76,7 @@ faceana-mtq/
 
 1. **克隆项目**
 ```bash
-git clone https://github.com/your-username/faceana-mtq.git
+git clone https://github.com/weisiren000/faceana-mtq.git
 cd faceana-mtq
 ```
 
