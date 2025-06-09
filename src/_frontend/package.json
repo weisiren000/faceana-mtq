@@ -12,7 +12,7 @@
     "start": "next start",
     "lint": "next lint",
     "electron": "electron .",
-    "electron-dev": "concurrently \"npm run dev\" \"wait-on http://localhost:3000 && electron .\"",
+    "electron-dev": "concurrently \"npm run dev\" \"wait-on -d 8000 http-get://localhost:3000 && cross-env NODE_ENV=development electron .\"",
     "electron-pack": "npm run export && electron-builder",
     "preelectron-pack": "npm run export"
   },
@@ -72,6 +72,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "concurrently": "^9.1.0",
+    "cross-env": "^7.0.3",
     "electron": "^36.3.2",
     "electron-builder": "^26.0.12",
     "electron-reload": "^2.0.0-alpha.1",

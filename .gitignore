@@ -232,3 +232,13 @@ data/
 *.db
 *.sqlite
 *.sqlite3
+
+**/angry.json
+**/disgusted.json
+**/fearful.json
+**/happy.json
+**/neutral.json
+**/sad.json
+**/surprised.json
+**/test.json
+**/jimeng.json

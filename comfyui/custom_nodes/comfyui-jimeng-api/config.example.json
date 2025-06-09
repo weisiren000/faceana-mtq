@@ -1,0 +1,19 @@
+{
+  "api_settings": {
+    "base_url": "https://ark.cn-beijing.volces.com/api/v3/images/generations",
+    "timeout": 60,
+    "max_retries": 3
+  },
+  "default_parameters": {
+    "model": "doubao-seedream-3-0-t2i-250415",
+    "size": "512x512"
+  },
+  "supported_models": [
+    "doubao-seedream-3-0-t2i-250415"
+  ],
+  "supported_sizes": [
+    "512x512",
+    "768x768",
+    "1024x1024"
+  ]
+}

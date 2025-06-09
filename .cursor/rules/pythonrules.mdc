@@ -6,7 +6,7 @@ alwaysApply: true
 # package manage preference
 - use uv replace pip
 - install python requirements package use uv
-  1. for example "uv pip install <package>" or "uv pip install -r requirements.txt"
+  1. for example "uv pip install <package>"
 
 # python project preference
 

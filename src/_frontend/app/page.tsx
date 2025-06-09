@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useRef, useEffect } from "react"
-import GenerationPanel from "../components/emotion-to-image/GenerationPanel"
 
 interface EmotionData {
   emotion: string
@@ -113,7 +112,6 @@ export default function EmoscanApp() {
   const [scanLine, setScanLine] = useState(0)
   const [currentTime, setCurrentTime] = useState("")
   const [analysisMode, setAnalysisMode] = useState<AnalysisMode>(AnalysisMode.QUICK)
-  const [showGenerationPanel, setShowGenerationPanel] = useState(false)
 
   // 使用打字机效果
   const { displayText, isTyping, showCursor, typingProgress } = useTypewriter(llmOutput, 25)
@@ -224,9 +222,17 @@ export default function EmoscanApp() {
 
         /* 滚动容器优化 */
         .ai-output-container {
-          scroll-behavior: smooth;
+          scroll-behavior: smooth; /* 恢复平滑滚动 */
           will-change: scroll-position;
           -webkit-overflow-scrolling: touch;
+          /* 确保可以正常选择文本 */
+          user-select: text;
+          -webkit-user-select: text;
+          -moz-user-select: text;
+          -ms-user-select: text;
+          /* 确保滚动正常工作 */
+          overflow-y: auto;
+          overflow-x: hidden;
         }
 
         /* 移除阻止滚动的伪元素 */
@@ -294,52 +300,7 @@ export default function EmoscanApp() {
         })
       }
 
-      // 丝滑滚动处理
-      let isScrolling = false
-      let scrollTimeout: number
-
-      const handleWheel = (e: WheelEvent) => {
-        e.preventDefault()
-
-        const scrollAmount = e.deltaY * 0.8 // 调整滚动灵敏度
-        const currentScrollTop = element.scrollTop
-        const scrollHeight = element.scrollHeight
-        const clientHeight = element.clientHeight
-        const maxScroll = scrollHeight - clientHeight
-
-        if (maxScroll <= 0) return // 内容不够长，不需要滚动
-
-        let newScrollTop = Math.max(0, Math.min(maxScroll, currentScrollTop + scrollAmount))
-
-        // 使用requestAnimationFrame实现丝滑滚动
-        if (!isScrolling) {
-          isScrolling = true
-
-          const smoothScroll = () => {
-            const diff = newScrollTop - element.scrollTop
-            const step = diff * 0.15 // 缓动系数，值越小越平滑
-
-            if (Math.abs(diff) > 0.5) {
-              element.scrollTop += step
-              requestAnimationFrame(smoothScroll)
-            } else {
-              element.scrollTop = newScrollTop
-              isScrolling = false
-            }
-          }
-
-          requestAnimationFrame(smoothScroll)
-        } else {
-          // 如果正在滚动，更新目标位置
-          newScrollTop = Math.max(0, Math.min(maxScroll, newScrollTop + scrollAmount))
-        }
-
-        // 清除之前的超时，设置新的超时来重置滚动状态
-        clearTimeout(scrollTimeout)
-        scrollTimeout = window.setTimeout(() => {
-          isScrolling = false
-        }, 150)
-      }
+      // 滚动处理变量（保留用于清理）
 
       // 初始化文本行样式
       const initializeTextLines = () => {
@@ -349,9 +310,21 @@ export default function EmoscanApp() {
         }, 50)
       }
 
-      // 添加滚动监听器
+      // 只添加滚动监听器，移除wheel监听器让浏览器处理滚轮事件
       element.addEventListener('scroll', handleScroll, { passive: true })
-      element.addEventListener('wheel', handleWheel, { passive: false })
+
+      // 防止文本选择时的意外滚动
+      element.addEventListener('selectstart', (e) => {
+        // 允许文本选择，但防止选择时的滚动
+        e.stopPropagation()
+      }, { passive: true })
+
+      element.addEventListener('mousedown', (e) => {
+        // 如果是文本选择操作，不触发滚动
+        if (e.detail > 1) { // 双击或多击
+          e.stopPropagation()
+        }
+      }, { passive: true })
 
       // 监听DOM变化，当文本内容更新时重新计算样式
       const observer = new MutationObserver(() => {
@@ -369,16 +342,12 @@ export default function EmoscanApp() {
 
       return () => {
         element.removeEventListener('scroll', handleScroll)
-        element.removeEventListener('wheel', handleWheel)
         observer.disconnect()
         document.head.removeChild(style)
 
-        // 清理动画帧和超时
+        // 清理动画帧
         if (animationId) {
           cancelAnimationFrame(animationId)
-        }
-        if (scrollTimeout) {
-          clearTimeout(scrollTimeout)
         }
       }
     }
@@ -529,6 +498,27 @@ export default function EmoscanApp() {
   // 批量分析所有图像
   const analyzeBatchImages = async (images: CapturedImage[]) => {
     try {
+      // 首先检查API是否可用
+      const apiAvailable = await checkApiAvailability();
+      
+      if (!apiAvailable) {
+        // API不可用，直接使用模拟数据
+        console.log("API不可用，使用模拟数据");
+        completeAnalysisWithMockData();
+        setIsAnalyzing(false);
+        
+        // 更新图像状态
+        images.forEach((_, index) => {
+          setTimeout(
+            () => {
+              setCapturedImages((prev) => prev.map((img, i) => (i === index ? { ...img, analyzing: false } : img)))
+            },
+            (index + 1) * 200,
+          )
+        });
+        return;
+      }
+      
       const formData = new FormData()
 
       // 将所有图像转换为Blob并添加到FormData
@@ -541,6 +531,7 @@ export default function EmoscanApp() {
         }
       }
 
+      // 对于批量分析，我们先使用原有的批量API，然后基于结果生成图像
       const response = await fetch('http://localhost:8000/api/v1/analyze/batch', {
         method: 'POST',
         body: formData,
@@ -557,7 +548,57 @@ export default function EmoscanApp() {
         setEmotionData(result.emotion_data)
 
         // 使用API返回的分析文本
-        setLlmOutput(result.analysis_text)
+        let analysisText = result.analysis_text
+
+        // 尝试基于批量分析结果生成图像
+        try {
+          const imageGenResponse = await fetch('http://localhost:8000/api/v1/generation/generate-from-analysis', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              emotion_data: result.emotion_data,
+              seed: Math.floor(Math.random() * 1000000) // 随机种子
+            }),
+          })
+
+          if (imageGenResponse.ok) {
+            const imageGenResult = await imageGenResponse.json()
+
+            // 添加图像生成结果信息
+            analysisText += "\n\n" + "━".repeat(80) + "\n"
+            analysisText += ">>> COMFYUI IMAGE GENERATION <<<\n\n"
+
+            if (imageGenResult.success) {
+              analysisText += `✅ 图像生成成功!\n`
+              analysisText += `🎨 生成时间: ${imageGenResult.generation_time?.toFixed(2)}秒\n`
+              analysisText += `📸 生成图像: ${imageGenResult.images?.length || 0}张\n`
+
+              if (imageGenResult.images && imageGenResult.images.length > 0) {
+                analysisText += `\n生成的图像:\n`
+                imageGenResult.images.forEach((img: any, index: number) => {
+                  analysisText += `${index + 1}. ${img.filename}\n`
+                  analysisText += `   URL: ${img.url}\n`
+                })
+              }
+            } else {
+              analysisText += `❌ 图像生成失败: ${imageGenResult.error_message}\n`
+              analysisText += `💡 提示: 请检查ComfyUI服务是否正常运行\n`
+            }
+          } else {
+            analysisText += "\n\n" + "━".repeat(80) + "\n"
+            analysisText += ">>> COMFYUI IMAGE GENERATION <<<\n\n"
+            analysisText += `❌ 图像生成API调用失败: ${imageGenResponse.status}\n`
+          }
+        } catch (imageGenError) {
+          console.warn('图像生成失败，但情绪分析成功:', imageGenError)
+          analysisText += "\n\n" + "━".repeat(80) + "\n"
+          analysisText += ">>> COMFYUI IMAGE GENERATION <<<\n\n"
+          analysisText += `❌ 图像生成异常: ${imageGenError}\n`
+        }
+
+        setLlmOutput(analysisText)
       } else {
         // API调用失败，显示错误信息
         const errorText = `>>> 批量API调用失败 <<<\n\n错误信息: ${result.error_message || '未知错误'}\n\n请检查后端服务是否正常运行。`
@@ -602,12 +643,42 @@ export default function EmoscanApp() {
     }
   }
 
-  // 调用后端API进行情绪分析
+  // 检查API是否可用
+  const checkApiAvailability = async () => {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 2000); // 2秒超时
+      
+      const response = await fetch('http://localhost:8000/health', {
+        method: 'GET',
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
+      return response.ok;
+    } catch (error) {
+      console.log('API不可用:', error);
+      return false;
+    }
+  };
+
+  // 调用后端API进行情绪分析和图像生成
   const analyzeImageWithAPI = async (imageBlob: Blob) => {
     try {
+      // 首先检查API是否可用
+      const apiAvailable = await checkApiAvailability();
+
+      if (!apiAvailable) {
+        // API不可用，直接使用模拟数据
+        console.log("API不可用，使用模拟数据");
+        completeAnalysisWithMockData();
+        return;
+      }
+
       const formData = new FormData()
       formData.append('file', imageBlob, 'capture.jpg')
 
+      // 第一步：进行情绪分析
       const response = await fetch('http://localhost:8000/api/v1/analyze/image', {
         method: 'POST',
         body: formData,
@@ -624,7 +695,53 @@ export default function EmoscanApp() {
         setEmotionData(result.emotion_data)
 
         // 使用API返回的分析文本
-        setLlmOutput(result.analysis_text)
+        let analysisText = result.analysis_text
+
+        // 第二步：基于情绪分析结果生成图像
+        try {
+          const imageGenResponse = await fetch('http://localhost:8000/api/v1/generation/generate-from-analysis', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              emotion_data: result.emotion_data,
+              seed: Math.floor(Math.random() * 1000000) // 随机种子
+            }),
+          })
+
+          // 添加图像生成结果信息
+          analysisText += "\n\n" + "━".repeat(80) + "\n"
+          analysisText += ">>> COMFYUI IMAGE GENERATION <<<\n\n"
+
+          if (imageGenResponse.ok) {
+            const imageGenResult = await imageGenResponse.json()
+
+            if (imageGenResult.success) {
+              analysisText += `✅ 图像生成成功!\n`
+              analysisText += `🎨 生成时间: ${imageGenResult.generation_time?.toFixed(2)}秒\n`
+              analysisText += `📸 生成图像: ${imageGenResult.images?.length || 0}张\n`
+
+              if (imageGenResult.images && imageGenResult.images.length > 0) {
+                analysisText += `\n生成的图像:\n`
+                imageGenResult.images.forEach((img: any, index: number) => {
+                  analysisText += `${index + 1}. ${img.filename}\n`
+                  analysisText += `   URL: ${img.url}\n`
+                })
+              }
+            } else {
+              analysisText += `❌ 图像生成失败: ${imageGenResult.error_message}\n`
+              analysisText += `💡 提示: 请检查ComfyUI服务是否正常运行\n`
+            }
+          } else {
+            analysisText += `❌ 图像生成API调用失败: ${imageGenResponse.status}\n`
+          }
+        } catch (imageGenError) {
+          console.warn('图像生成失败，但情绪分析成功:', imageGenError)
+          analysisText += `❌ 图像生成异常: ${imageGenError}\n`
+        }
+
+        setLlmOutput(analysisText)
       } else {
         // API调用失败，显示错误信息
         const errorText = `>>> API调用失败 <<<\n\n错误信息: ${result.error_message || '未知错误'}\n\n请检查后端服务是否正常运行。`
@@ -824,6 +941,90 @@ export default function EmoscanApp() {
                 </button>
               </div>
 
+              {/* 滚动测试按钮 */}
+              <button
+                onClick={() => {
+                  const longTestText = Array.from({ length: 50 }, (_, i) =>
+                    `Line ${i + 1}: This is a long test line to check scrolling functionality. Lorem ipsum dolor sit amet, consectetur adipiscing elit.`
+                  ).join('\n')
+                  setLlmOutput(`>>> SCROLL TEST <<<\n\n${longTestText}\n\n>>> END OF SCROLL TEST <<<`)
+                }}
+                className="w-full py-2 px-3 bg-yellow-600/20 border border-yellow-400/50 rounded-lg text-yellow-400 hover:bg-yellow-600/30 transition-all duration-200 text-xs"
+              >
+                TEST SCROLL
+              </button>
+
+              {/* ComfyUI图像生成测试按钮 */}
+              <button
+                onClick={async () => {
+                  setLlmOutput(">>> COMFYUI图像生成测试 <<<\n\n正在连接ComfyUI服务...")
+
+                  try {
+                    // 获取当前主导情绪
+                    const dominantEmotion = emotionData.length > 0
+                      ? emotionData.reduce((prev, current) =>
+                          prev.percentage > current.percentage ? prev : current
+                        )
+                      : { emotion: "happy", percentage: 75.5 }
+
+                    setLlmOutput(`>>> COMFYUI图像生成测试 <<<\n\n主导情绪: ${dominantEmotion.emotion} (${dominantEmotion.percentage.toFixed(1)}%)\n正在生成图像...`)
+
+                    // 调用图像生成API
+                    const response = await fetch('http://localhost:8000/api/v1/generation/generate', {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                      },
+                      body: JSON.stringify({
+                        emotion: dominantEmotion.emotion.toLowerCase(),
+                        seed: Math.floor(Math.random() * 1000000)
+                      }),
+                    })
+
+                    if (response.ok) {
+                      const result = await response.json()
+
+                      let resultText = `>>> COMFYUI图像生成测试 <<<\n\n`
+                      resultText += `主导情绪: ${dominantEmotion.emotion} (${dominantEmotion.percentage.toFixed(1)}%)\n\n`
+
+                      if (result.success) {
+                        resultText += `✅ 图像生成成功!\n`
+                        resultText += `🎨 生成时间: ${result.generation_time?.toFixed(2)}秒\n`
+                        resultText += `📸 生成图像: ${result.images?.length || 0}张\n`
+                        resultText += `🆔 提示ID: ${result.prompt_id}\n\n`
+
+                        if (result.images && result.images.length > 0) {
+                          resultText += `生成的图像:\n`
+                          result.images.forEach((img: any, index: number) => {
+                            resultText += `${index + 1}. ${img.filename}\n`
+                            resultText += `   📁 子目录: ${img.subfolder || '无'}\n`
+                            resultText += `   🔗 URL: ${img.url}\n\n`
+                          })
+
+                          resultText += `💡 提示: 你可以在ComfyUI输出目录或通过上述URL查看生成的图像`
+                        }
+                      } else {
+                        resultText += `❌ 图像生成失败!\n`
+                        resultText += `错误信息: ${result.error_message}\n\n`
+                        resultText += `💡 请检查:\n`
+                        resultText += `1. ComfyUI是否在端口8188运行\n`
+                        resultText += `2. 工作流文件是否存在\n`
+                        resultText += `3. 后端服务日志中的详细错误信息`
+                      }
+
+                      setLlmOutput(resultText)
+                    } else {
+                      setLlmOutput(`>>> COMFYUI图像生成测试 <<<\n\n❌ API调用失败: ${response.status}\n\n请检查后端服务是否正常运行。`)
+                    }
+                  } catch (error) {
+                    setLlmOutput(`>>> COMFYUI图像生成测试 <<<\n\n❌ 连接异常: ${error}\n\n请检查网络连接和后端服务状态。`)
+                  }
+                }}
+                className="w-full py-2 px-3 bg-purple-600/20 border border-purple-400/50 rounded-lg text-purple-400 hover:bg-purple-600/30 transition-all duration-200 text-xs"
+              >
+                🎨 TEST COMFYUI GENERATION
+              </button>
+
               {/* API测试按钮 */}
               <button
                 onClick={async () => {
@@ -961,16 +1162,9 @@ export default function EmoscanApp() {
           <div className="h-full flex flex-col">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-lg font-semibold text-cyan-400">AI ANALYSIS OUTPUT</h2>
-              <button
-                onClick={() => setShowGenerationPanel(!showGenerationPanel)}
-                className="text-xs bg-purple-600/20 border border-purple-400/50 rounded px-2 py-1 text-purple-400 hover:bg-purple-600/30 transition-all duration-200"
-              >
-                {showGenerationPanel ? "查看分析结果" : "生成情绪图像"}
-              </button>
             </div>
 
-            {!showGenerationPanel ? (
-              // 原来的LLM输出显示
+            {/* LLM输出显示 */}
               <div
                 ref={outputRef}
                 className="flex-1 border border-green-400/30 rounded-lg bg-black/80 overflow-y-auto overflow-x-hidden ai-output-container relative"
@@ -1043,12 +1237,6 @@ export default function EmoscanApp() {
                   )}
                 </div>
               </div>
-            ) : (
-              // 图像生成面板
-              <div className="flex-1 overflow-y-auto">
-                <GenerationPanel emotionData={emotionData} />
-              </div>
-            )}
           </div>
         </div>
       </div>

@@ -8,4 +8,4 @@ from .generation import router as generation_router
 router = APIRouter()
 
 # 注册路由
-router.include_router(generation_router) 
+router.include_router(generation_router)

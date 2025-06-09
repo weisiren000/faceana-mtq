@@ -1,233 +1,327 @@
 """
-ComfyUI服务类 - 负责与ComfyUI API通信
-提供发送提示词、获取生成结果等功能
+ComfyUI服务模块
+负责与ComfyUI API交互，生成情绪相关的图像
 """
 
 import json
+import time
+import uuid
 import logging
-import aiohttp
 import asyncio
-from typing import Dict, Any, Optional, List, Callable
+from pathlib import Path
+from typing import Dict, List, Optional, Any
+
+import aiohttp
+import aiofiles
+
+from ..models.comfyui import (
+    GenerationRequest, GenerationResponse, ComfyUIStatus, WorkflowInfo,
+    COMFYUI_CONFIG, get_workflow_filename,
+    parse_comfyui_outputs, json_to_workflow, EMOTION_WORKFLOW_MAPPING, DEFAULT_WORKFLOW
+)
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
+
 class ComfyUIService:
-    """ComfyUI API通信服务"""
+    """ComfyUI服务类"""
     
-    def __init__(self, base_url: str = "http://localhost:8000"):
-        """
-        初始化ComfyUI服务
+    def __init__(self, base_url: Optional[str] = None, workflows_dir: Optional[str] = None):
+        self.base_url = base_url or COMFYUI_CONFIG["base_url"]
+        self.workflows_dir = Path(workflows_dir) if workflows_dir else Path(__file__).parent.parent.parent / "workflows"
+        self.client_id = f"emoscan_{uuid.uuid4()}"
+        self.timeout = COMFYUI_CONFIG["timeout"]
+        self.max_wait_time = COMFYUI_CONFIG["max_wait_time"]
+        self.check_interval = COMFYUI_CONFIG["check_interval"]
         
-        Args:
-            base_url: ComfyUI API基础URL，默认为http://localhost:8000
-        """
-        self.base_url = base_url
-        self.client_id = f"emoscan_{id(self)}"
-        self.ws = None
-        self.connected = False
-        self.callbacks = {}
+        logger.info(f"ComfyUI服务初始化: {self.base_url}, 工作流目录: {self.workflows_dir}")
     
-    async def check_connection(self) -> bool:
-        """
-        检查与ComfyUI的连接状态
-        
-        Returns:
-            bool: 是否连接成功
-        """
+    async def check_status(self) -> ComfyUIStatus:
+        """检查ComfyUI服务状态"""
         try:
-            async with aiohttp.ClientSession() as session:
+            async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=5)) as session:
+                # 检查系统状态
                 async with session.get(f"{self.base_url}/system_stats") as response:
                     if response.status == 200:
-                        logger.info(f"成功连接到ComfyUI服务器: {self.base_url}")
-                        return True
+                        system_stats = await response.json()
+                        
+                        # 检查队列状态
+                        async with session.get(f"{self.base_url}/queue") as queue_response:
+                            if queue_response.status == 200:
+                                queue_data = await queue_response.json()
+                                return ComfyUIStatus(
+                                    available=True,
+                                    queue_running=len(queue_data.get("queue_running", [])),
+                                    queue_pending=len(queue_data.get("queue_pending", [])),
+                                    system_stats=system_stats
+                                )
+                            
+                        return ComfyUIStatus(available=True, system_stats=system_stats)
                     else:
-                        logger.error(f"连接ComfyUI失败: {response.status}")
-                        return False
+                        return ComfyUIStatus(
+                            available=False,
+                            error_message=f"HTTP {response.status}"
+                        )
+                        
         except Exception as e:
-            logger.error(f"连接ComfyUI时发生错误: {e}")
-            return False
+            logger.error(f"检查ComfyUI状态失败: {e}")
+            return ComfyUIStatus(
+                available=False,
+                error_message=str(e)
+            )
     
-    async def send_prompt(self, workflow: Dict) -> Dict[str, Any]:
-        """
-        发送工作流到ComfyUI
-        
-        Args:
-            workflow: ComfyUI工作流数据
-            
-        Returns:
-            Dict: 响应结果，包含prompt_id等信息
-        """
+    async def load_workflow(self, emotion: str, custom_workflow: Optional[str] = None) -> Optional[Dict[str, Any]]:
+        """加载工作流文件"""
         try:
-            # 准备发送的数据
+            # 确定工作流文件名
+            workflow_filename = custom_workflow or get_workflow_filename(emotion)
+            workflow_path = self.workflows_dir / workflow_filename
+            
+            # 检查文件是否存在
+            if not workflow_path.exists():
+                logger.warning(f"工作流文件不存在: {workflow_path}")
+                return None
+            
+            # 异步读取文件
+            async with aiofiles.open(workflow_path, 'r', encoding='utf-8') as f:
+                content = await f.read()
+                workflow = json_to_workflow(content)
+                
+            logger.info(f"成功加载工作流: {workflow_path}")
+            return workflow
+            
+        except Exception as e:
+            logger.error(f"加载工作流失败: {e}")
+            return None
+    
+    def modify_workflow(self, workflow: Dict[str, Any], emotion: str, seed: Optional[int] = None,
+                       custom_params: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+        """修改工作流参数 - 确保每次生成唯一的文件名和随机seed"""
+        modified_workflow = workflow.copy()
+
+        # 生成唯一的文件名前缀，确保每次都不同
+        timestamp = int(time.time() * 1000)  # 使用毫秒级时间戳
+        unique_id = str(uuid.uuid4())[:8]    # 使用UUID的前8位
+        filename_prefix = f"emoscan_{emotion}_{timestamp}_{unique_id}"
+
+        # 生成随机seed（如果没有指定的话）
+        if seed is None:
+            import random
+            seed = random.randint(1, 2147483647)  # 32位正整数范围
+
+        # 查找并修改所有SaveImage节点的filename_prefix
+        modified_count = 0
+        for node_id, node_data in modified_workflow.items():
+            if isinstance(node_data, dict) and node_data.get("class_type") == "SaveImage":
+                if "inputs" in node_data:
+                    node_data["inputs"]["filename_prefix"] = filename_prefix
+                    modified_count += 1
+                    logger.info(f"修改节点 {node_id} 的filename_prefix为: {filename_prefix}")
+
+        # 查找并修改所有包含seed的节点（JimengImageGenerator, KSampler等）
+        seed_modified_count = 0
+        for node_id, node_data in modified_workflow.items():
+            if isinstance(node_data, dict) and "inputs" in node_data:
+                inputs = node_data["inputs"]
+                if "seed" in inputs:
+                    inputs["seed"] = seed
+                    seed_modified_count += 1
+                    logger.info(f"修改节点 {node_id} ({node_data.get('class_type', 'Unknown')}) 的seed为: {seed}")
+
+        logger.info(f"工作流修改完成 (情绪: {emotion}, 修改了 {modified_count} 个SaveImage节点, {seed_modified_count} 个seed参数)")
+        return modified_workflow
+    
+    async def send_prompt(self, workflow: Dict[str, Any]) -> Optional[str]:
+        """发送工作流到ComfyUI"""
+        try:
             data = {
                 "prompt": workflow,
                 "client_id": self.client_id
             }
             
-            # 发送请求
-            async with aiohttp.ClientSession() as session:
-                async with session.post(
-                    f"{self.base_url}/prompt",
-                    json=data
-                ) as response:
+            async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=self.timeout)) as session:
+                async with session.post(f"{self.base_url}/prompt", json=data) as response:
                     if response.status == 200:
                         result = await response.json()
                         prompt_id = result.get("prompt_id")
-                        logger.info(f"成功发送提示词，提示ID: {prompt_id}")
-                        
-                        return {
-                            "success": True,
-                            "prompt_id": prompt_id,
-                            "message": "已开始生成"
-                        }
+                        logger.info(f"成功发送工作流，提示ID: {prompt_id}")
+                        return prompt_id
                     else:
                         error_text = await response.text()
-                        logger.error(f"发送到ComfyUI API失败: {response.status}, {error_text}")
-                        return {"success": False, "error": f"API错误: {response.status}"}
+                        logger.error(f"发送工作流失败，状态码: {response.status}, 错误: {error_text}")
+                        return None
                         
         except Exception as e:
-            logger.error(f"发送提示词时发生错误: {e}")
-            return {"success": False, "error": str(e)}
-    
-    def create_workflow_from_emotion(self, emotion: str, intensity: float = 0.8,
-                                  custom_prompt: Optional[str] = None) -> Dict:
-        """
-        根据情绪创建ComfyUI工作流
-        
-        Args:
-            emotion: 情绪类型，如happy、sad等
-            intensity: 情绪强度，0-1之间
-            custom_prompt: 自定义提示词
-            
-        Returns:
-            Dict: ComfyUI工作流数据
-        """
-        # 情绪到提示词的映射
-        emotion_prompts = {
-            "happy": "a joyful scene with bright colors, sunshine, smiling people",
-            "sad": "a melancholic scene with rain, dark colors, lonely figure",
-            "angry": "a dramatic scene with intense red colors, stormy weather",
-            "surprised": "a scene with unexpected elements, bright contrasts",
-            "neutral": "a balanced scene with natural colors, calm atmosphere",
-            "disgusted": "a scene with unsettling elements, sickly green tones",
-            "fearful": "a dark scene with shadows, fog, mysterious elements"
-        }
-        
-        # 情绪参数映射
-        emotion_params = {
-            "happy": {"cfg": 6.5, "sampler": "euler_a", "steps": 20},
-            "sad": {"cfg": 7.5, "sampler": "ddim", "steps": 25},
-            "angry": {"cfg": 8.0, "sampler": "dpm++_2m", "steps": 30},
-            "surprised": {"cfg": 7.0, "sampler": "euler", "steps": 20},
-            "neutral": {"cfg": 7.0, "sampler": "ddpm", "steps": 20},
-            "disgusted": {"cfg": 7.5, "sampler": "dpm2", "steps": 25},
-            "fearful": {"cfg": 8.0, "sampler": "dpm_sde", "steps": 30}
-        }
-        
-        # 获取情绪对应的提示词和参数
-        base_prompt = emotion_prompts.get(emotion.lower(), "a scene")
-        params = emotion_params.get(emotion.lower(), {"cfg": 7.0, "sampler": "euler_ancestral", "steps": 20})
-        
-        # 添加自定义提示词
-        if custom_prompt:
-            prompt = f"{base_prompt}, {custom_prompt}"
-        else:
-            prompt = base_prompt
-            
-        # 根据强度调整提示词
-        intensity_word = "extremely" if intensity > 0.9 else "very" if intensity > 0.7 else ""
-        if intensity_word:
-            prompt = f"{prompt}, {intensity_word} {emotion}"
-            
-        # 创建工作流
-        workflow = {
-            "3": {
-                "inputs": {
-                    "seed": int(intensity * 1000000),  # 使用强度生成种子
-                    "steps": params["steps"],
-                    "cfg": params["cfg"],
-                    "sampler_name": params["sampler"],
-                    "scheduler": "normal",
-                    "denoise": 1.0,
-                    "model": ["4", 0],
-                    "positive": ["6", 0],
-                    "negative": ["7", 0],
-                    "latent_image": ["5", 0]
-                },
-                "class_type": "KSampler"
-            },
-            "4": {
-                "inputs": {
-                    "ckpt_name": "dreamshaper_8.safetensors"  # 默认模型
-                },
-                "class_type": "CheckpointLoaderSimple"
-            },
-            "5": {
-                "inputs": {
-                    "width": 512,
-                    "height": 512,
-                    "batch_size": 1
-                },
-                "class_type": "EmptyLatentImage"
-            },
-            "6": {
-                "inputs": {
-                    "text": prompt,
-                    "clip": ["4", 1]
-                },
-                "class_type": "CLIPTextEncode"
-            },
-            "7": {
-                "inputs": {
-                    "text": "ugly, deformed, bad anatomy, blurry, low quality",
-                    "clip": ["4", 1]
-                },
-                "class_type": "CLIPTextEncode"
-            },
-            "8": {
-                "inputs": {
-                    "samples": ["3", 0],
-                    "filename_prefix": f"emoscan_{emotion}",
-                    "fps": 8
-                },
-                "class_type": "SaveImage"
-            }
-        }
-        
-        return workflow
-    
-    async def get_image_url(self, filename: str) -> Optional[str]:
-        """
-        获取生成图像的URL
-        
-        Args:
-            filename: 图像文件名
-            
-        Returns:
-            Optional[str]: 图像URL，如果失败则返回None
-        """
-        try:
-            # ComfyUI的图像URL格式
-            return f"{self.base_url}/view?filename={filename}"
-        except Exception as e:
-            logger.error(f"获取图像URL时出错: {e}")
+            logger.error(f"发送工作流异常: {e}")
             return None
-    
-    async def get_history(self) -> List[Dict]:
-        """
-        获取ComfyUI历史记录
-        
-        Returns:
-            List[Dict]: 历史记录列表
-        """
+
+    async def wait_for_completion(self, prompt_id: str) -> Optional[Dict[str, Any]]:
+        """等待图像生成完成"""
+        logger.info(f"等待图像生成完成，提示ID: {prompt_id}")
+        start_time = time.time()
+
+        async with aiohttp.ClientSession() as session:
+            while time.time() - start_time < self.max_wait_time:
+                try:
+                    # 首先检查完整历史记录
+                    async with session.get(f"{self.base_url}/history") as response:
+                        if response.status == 200:
+                            all_history = await response.json()
+                            if prompt_id in all_history:
+                                result = all_history[prompt_id]
+                                # 检查状态
+                                if "status" in result:
+                                    status = result["status"]
+                                    if status.get("completed", False) and status.get("status_str") == "success":
+                                        logger.info(f"图像生成完成！提示ID: {prompt_id}")
+                                        return result.get("outputs", {})
+                                    elif status.get("status_str") == "error":
+                                        logger.error(f"图像生成失败: {status}")
+                                        return None
+
+                                # 如果有outputs，也认为是成功的
+                                if "outputs" in result:
+                                    logger.info(f"图像生成完成（通过outputs检测）！提示ID: {prompt_id}")
+                                    return result["outputs"]
+
+                    # 检查队列状态，看是否还在处理中
+                    async with session.get(f"{self.base_url}/queue") as response:
+                        if response.status == 200:
+                            queue_data = await response.json()
+                            running = queue_data.get("queue_running", [])
+                            pending = queue_data.get("queue_pending", [])
+
+                            # 检查是否还在队列中
+                            in_queue = False
+                            for item in running + pending:
+                                if len(item) >= 2 and isinstance(item[1], str):
+                                    if item[1] == prompt_id:
+                                        in_queue = True
+                                        break
+                                elif len(item) >= 2 and isinstance(item[1], dict):
+                                    # 有些格式可能不同，也检查一下
+                                    if str(item[1]).find(prompt_id) != -1:
+                                        in_queue = True
+                                        break
+
+                            if not in_queue:
+                                # 不在队列中，最后再检查一次历史记录
+                                async with session.get(f"{self.base_url}/history") as hist_response:
+                                    if hist_response.status == 200:
+                                        final_history = await hist_response.json()
+                                        if prompt_id in final_history:
+                                            result = final_history[prompt_id]
+                                            logger.info(f"在最终检查中找到结果: {prompt_id}")
+                                            return result.get("outputs", {})
+                                        else:
+                                            logger.warning(f"任务不在队列中，但历史记录中也找不到: {prompt_id}")
+                                            return None
+
+                    # 等待一段时间后重试
+                    await asyncio.sleep(self.check_interval)
+
+                except Exception as e:
+                    logger.error(f"检查生成状态时出错: {e}")
+                    await asyncio.sleep(1)  # 出错时短暂等待
+                    continue
+
+        logger.warning(f"等待图像生成超时: {prompt_id}")
+        return None
+
+    async def generate_image(self, request: GenerationRequest) -> GenerationResponse:
+        """生成图像的主要方法"""
+        start_time = time.time()
+
         try:
-            async with aiohttp.ClientSession() as session:
-                async with session.get(f"{self.base_url}/history") as response:
-                    if response.status == 200:
-                        return await response.json()
-                    else:
-                        logger.error(f"获取历史记录失败: {response.status}")
-                        return []
+            # 1. 检查服务状态
+            status = await self.check_status()
+            if not status.available:
+                return GenerationResponse(
+                    success=False,
+                    error_message=f"ComfyUI服务不可用: {status.error_message}"
+                )
+
+            # 2. 加载工作流
+            workflow = await self.load_workflow(request.emotion, request.workflow_name)
+            if not workflow:
+                return GenerationResponse(
+                    success=False,
+                    error_message=f"无法加载工作流: {request.emotion}"
+                )
+
+            # 3. 修改工作流参数
+            modified_workflow = self.modify_workflow(
+                workflow,
+                request.emotion,
+                request.seed,
+                request.custom_params
+            )
+
+            # 4. 发送工作流
+            prompt_id = await self.send_prompt(modified_workflow)
+            if not prompt_id:
+                return GenerationResponse(
+                    success=False,
+                    error_message="发送工作流失败"
+                )
+
+            # 5. 等待完成
+            outputs = await self.wait_for_completion(prompt_id)
+            if not outputs:
+                return GenerationResponse(
+                    success=False,
+                    prompt_id=prompt_id,
+                    error_message="图像生成超时或失败"
+                )
+
+            # 6. 解析结果
+            images = parse_comfyui_outputs(outputs, self.base_url)
+            generation_time = time.time() - start_time
+
+            logger.info(f"图像生成成功: {len(images)}张图像，耗时: {generation_time:.2f}秒")
+
+            return GenerationResponse(
+                success=True,
+                prompt_id=prompt_id,
+                images=images,
+                generation_time=generation_time
+            )
+
         except Exception as e:
-            logger.error(f"获取历史记录时出错: {e}")
-            return [] 
+            logger.error(f"图像生成异常: {e}")
+            return GenerationResponse(
+                success=False,
+                error_message=f"生成异常: {str(e)}",
+                generation_time=time.time() - start_time
+            )
+
+    async def list_workflows(self) -> List[WorkflowInfo]:
+        """列出所有可用的工作流"""
+        workflows = []
+
+        try:
+            for emotion, filename in EMOTION_WORKFLOW_MAPPING.items():
+                workflow_path = self.workflows_dir / filename
+                workflows.append(WorkflowInfo(
+                    name=filename,
+                    emotion=emotion,
+                    path=str(workflow_path),
+                    exists=workflow_path.exists(),
+                    last_modified=datetime.fromtimestamp(workflow_path.stat().st_mtime) if workflow_path.exists() else None
+                ))
+
+            # 添加默认工作流
+            default_path = self.workflows_dir / DEFAULT_WORKFLOW
+            workflows.append(WorkflowInfo(
+                name=DEFAULT_WORKFLOW,
+                emotion="default",
+                path=str(default_path),
+                exists=default_path.exists(),
+                last_modified=datetime.fromtimestamp(default_path.stat().st_mtime) if default_path.exists() else None
+            ))
+
+        except Exception as e:
+            logger.error(f"列出工作流失败: {e}")
+
+        return workflows
