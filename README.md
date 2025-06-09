@@ -6,7 +6,7 @@
 
 **基于AI的实时情感分析与图像生成桌面应用**
 
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+[![License](https://img.shields.io/badge/license-GPL-blue.svg)](GPL)
 [![Python](https://img.shields.io/badge/python-3.8+-green.svg)](https://python.org)
 [![Next.js](https://img.shields.io/badge/Next.js-15.2.4-black.svg)](https://nextjs.org)
 [![Electron](https://img.shields.io/badge/Electron-36.3.2-blue.svg)](https://electronjs.org)
